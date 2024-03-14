@@ -18,4 +18,5 @@ NB: You need to deploy Bounan.Bot`s stack first to create the SQS queue.
    4. Run `npm run deploy -- --profile <profile>`
    5. Keep the output of the command
 3. Fill .env file
-4. Run `docker-compose up`
+4. Run `docker compose build`
+5. Run `docker compose up -d`
