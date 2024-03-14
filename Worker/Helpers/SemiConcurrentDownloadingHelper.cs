@@ -97,11 +97,6 @@ public static class SemiConcurrentProcessingHelper
 				}
 			}
 		}
-		catch (Exception e)
-		{
-			Console.WriteLine(e);
-			throw;
-		}
 		finally
 		{
 			ordinalSemaphore.Release();

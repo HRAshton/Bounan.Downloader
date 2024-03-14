@@ -27,7 +27,6 @@ public static class PipeExtensions
 			}
 		}
 
-		Console.WriteLine("PumpToAsync: pipeReader completed");
 		outputStream.Close();
 	}
 }
