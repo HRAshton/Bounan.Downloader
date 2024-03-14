@@ -6,11 +6,16 @@
 
 This is a part of the BoUnAn project.
 
-Tasks:
-- Listen to SQS for signed URLs from BoUnAn Bot
-- Download the file from the signed URL to the local storage
-- Send the file to the Telegram bot
-- Delete the file from the local storage
-- Repeat
-- Profit
-- (Optional) Send the logs to CloudWatch
+## Getting Started
+
+NB: You need to deploy Bounan.Bot`s stack first to create the SQS queue.
+
+1. Clone the repository
+2. Create environment
+   1. Open terminal in AwsCdk
+   2. Set an email in config.ts
+   3. Run `npm install`
+   4. Run `npm run deploy -- --profile <profile>`
+   5. Keep the output of the command
+3. Fill .env file
+4. Run `docker-compose up`

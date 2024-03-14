@@ -1,0 +1,21 @@
+﻿{
+  "$schema": "https://json.schemastore.org/launchsettings.json",
+  "profiles": {
+    "BounanDownloader.Worker": {
+      "commandName": "Project",
+      "dotnetRunMessages": true,
+      "environmentVariables": {
+        "DOTNET_ENVIRONMENT": "Development",
+        "AWS_REGION": "eu-north-1",
+        "AWS_ACCESS_KEY_ID": "",
+        "AWS_SECRET_ACCESS_KEY": "",
+        "SqsConfig__QueueUrl": "",
+        "SqsConfig__Threads": "",
+        "Logging__AwsLogger__LogGroup": "",
+        "Telegram__ApiUrl": "",
+        "Telegram__BotToken": "",
+        "Telegram__DestinationChatId": ""
+      }
+    }
+  }
+}

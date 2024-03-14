@@ -1,0 +1,34 @@
+﻿services:
+  worker:
+    build:
+      context: .
+      dockerfile: Worker/Dockerfile
+    deploy:
+      restart_policy:
+        max_attempts: 3
+        condition: on-failure
+        delay: 10s
+    environment:
+      - AWS_REGION=${AWS_REGION}
+      - AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}
+      - AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
+      - SqsConfig__QueueUrl=${SqsConfig__QueueUrl}
+      - SqsConfig__Threads=${SqsConfig__Threads}
+      - Logging__AwsLogger__LogGroup=${Logging__AwsLogger__LogGroup}
+      - Telegram__BotToken=${Telegram__BotToken}
+      - Telegram__DestinationChatId=${Telegram__DestinationChatId}
+      - Telegram__ApiUrl=http://telegram-bot-api-server:8081
+    links:
+      - telegram-bot-api-server
+  
+  telegram-bot-api-server:
+    image: aiogram/telegram-bot-api:7.1
+    deploy:
+      restart_policy:
+        max_attempts: 3
+        condition: on-failure
+        delay: 10s
+    environment:
+      - TELEGRAM_LOCAL
+      - TELEGRAM_API_ID=${TELEGRAM_API_ID}
+      - TELEGRAM_API_HASH=${TELEGRAM_API_HASH}
