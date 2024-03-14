@@ -8,7 +8,7 @@ namespace Bounan.Downloader.Worker.Services;
 
 public class SqsService : ISqsService
 {
-	private readonly ReceiveMessageRequest _receiveMessageRequest;
+	private readonly ReceiveMessageRequest[] _receiveMessageRequests;
 	private readonly SemaphoreSlim _semaphore;
 
 	public SqsService(
@@ -20,12 +20,25 @@ public class SqsService : ISqsService
 		Logger = logger;
 		SqsClient = sqsClient;
 
-		_receiveMessageRequest = new ReceiveMessageRequest
+		_receiveMessageRequests = SqsConfig.Value.Queues
+			.Where(q => q.QueueUrl is not null)
+			.Select(q => new ReceiveMessageRequest
+			{
+				QueueUrl = q.QueueUrl!.ToString(),
+				MaxNumberOfMessages = 1,
+				WaitTimeSeconds = q.PoolingWaitTimeSeconds,
+			})
+			.ToArray();
+
+		if (_receiveMessageRequests.Length == 0)
 		{
-			QueueUrl = sqsConfig.Value.QueueUrl.ToString(),
-			MaxNumberOfMessages = 1,
-			WaitTimeSeconds = SqsConfig.Value.PoolingWaitTimeSeconds,
-		};
+			throw new ArgumentException("No valid queues configured");
+		}
+
+		if (_receiveMessageRequests.Any(r => r.WaitTimeSeconds is < 1 or > 20))
+		{
+			throw new ArgumentException("Invalid pooling wait time");
+		}
 
 		_semaphore = new SemaphoreSlim(sqsConfig.Value.Threads, sqsConfig.Value.Threads);
 	}
@@ -73,13 +86,16 @@ public class SqsService : ISqsService
 		Func<string, CancellationToken, Task> processMessage,
 		CancellationToken cancellationToken)
 	{
-		var response = await SqsClient.ReceiveMessageAsync(_receiveMessageRequest, cancellationToken);
-		if (response.Messages.Count <= 0)
+		var (response, queueIndex) = await ReceiveMessageAsync(cancellationToken);
+		if (response is null)
 		{
 			return;
 		}
 
-		Logger.LogInformation("Processing message: {MessageId}", response.Messages[0].MessageId);
+		Logger.LogInformation(
+			"Processing message: {MessageId} from queue {QueueIndex}",
+			response.Messages[0].MessageId,
+			queueIndex);
 
 		var cancellationTokenSource = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
 		cancellationTokenSource.CancelAfter(TimeSpan.FromSeconds(SqsConfig.Value.MessageTimeoutSeconds));
@@ -91,8 +107,26 @@ public class SqsService : ISqsService
 		Logger.LogInformation("Deleting message: {MessageId}", message.MessageId);
 
 		await SqsClient.DeleteMessageAsync(
-			SqsConfig.Value.QueueUrl.ToString(),
+			_receiveMessageRequests[queueIndex].QueueUrl,
 			message.ReceiptHandle,
 			cancellationToken);
+	}
+
+	private async Task<(ReceiveMessageResponse? Response, int QueueIndex)> ReceiveMessageAsync(
+		CancellationToken cancellationToken)
+	{
+		for (var queueIndex = 0; queueIndex < _receiveMessageRequests.Length; queueIndex++)
+		{
+			var response = await SqsClient.ReceiveMessageAsync(
+				_receiveMessageRequests[queueIndex],
+				cancellationToken);
+
+			if (response.Messages.Count > 0)
+			{
+				return (response, queueIndex);
+			}
+		}
+
+		return (null, -1);
 	}
 }

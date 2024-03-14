@@ -12,12 +12,13 @@
       - AWS_REGION=${AWS_REGION}
       - AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}
       - AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
-      - SqsConfig__QueueUrl=${SqsConfig__QueueUrl}
-      - SqsConfig__Threads=${SqsConfig__Threads}
       - Logging__AwsLogger__LogGroup=${Logging__AwsLogger__LogGroup}
       - Telegram__BotToken=${Telegram__BotToken}
       - Telegram__DestinationChatId=${Telegram__DestinationChatId}
       - Telegram__ApiUrl=http://telegram-bot-api-server:8081
+      - SqsConfig__Threads=${SqsConfig__Threads}
+      - SqsConfig__Queues__0__QueueUrl=${SqsConfig__Queues__0__QueueUrl}
+      - SqsConfig__Queues__1__QueueUrl=${SqsConfig__Queues__1__QueueUrl}
     links:
       - telegram-bot-api-server
   

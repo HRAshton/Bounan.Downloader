@@ -5,11 +5,6 @@ public record SqsConfig
 	public static readonly string SectionName = "SqsConfig";
 
 	/// <summary>
-	/// URL of the SQS queue to process.
-	/// </summary>
-	public required Uri QueueUrl { get; init; }
-
-	/// <summary>
 	/// Number of threads to process messages in parallel.
 	/// </summary>
 	public int Threads { get; init; } = 1;
@@ -23,9 +18,9 @@ public record SqsConfig
 	/// Maximum number of sequential errors before the service stops processing messages.
 	/// </summary>
 	public int MaxSequentialErrors { get; init; } = 3;
-	
+
 	/// <summary>
-	/// Number of seconds to wait for a message to be available in the queue.
+	/// Configuration for the SQS queues in priority order.
 	/// </summary>
-	public int PoolingWaitTimeSeconds { get; init; } = 20;
+	public required ICollection<SqsQueueConfig> Queues { get; init; }
 }
