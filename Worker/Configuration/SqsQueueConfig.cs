@@ -3,9 +3,9 @@
 public class SqsQueueConfig
 {
 	/// <summary>
-	/// Queue URL. Skip processing the queue if not set.
+	/// Queue URL.
 	/// </summary>
-	public Uri? QueueUrl { get; init; }
+	public required Uri QueueUrl { get; init; }
 
 	/// <summary>
 	/// Number of seconds to wait for a message to be available in the queue.

@@ -112,6 +112,7 @@ public class VideoCopyingService : IVideoCopyingService
 		CancellationToken cancellationToken)
 	{
 		await using var fileStream = File.OpenRead(videoInfo.FilePath);
+		await using var thumbStream = await HttpClient.GetStreamAsync(thumbnailUri, cancellationToken);
 
 		var message = await TelegramClient.SendVideoAsync(
 			_telegramConfig.DestinationChatId,
@@ -120,7 +121,7 @@ public class VideoCopyingService : IVideoCopyingService
 			width: videoInfo.Width,
 			height: videoInfo.Height,
 			duration: videoInfo.DurationSec,
-			thumbnail: new InputFileUrl(thumbnailUri),
+			thumbnail: new InputFileStream(thumbStream),
 			supportsStreaming: true,
 			cancellationToken: cancellationToken);
 		Logger.LogDebug("Video uploaded");
