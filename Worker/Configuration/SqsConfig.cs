@@ -11,6 +11,8 @@ public record SqsConfig
 
 	/// <summary>
 	/// Number of seconds to wait for a message to be processed before it is considered failed.
+	/// It is recommended to set this value to a value lower than the message visibility timeout
+	/// to avoid processing the same broken message multiple times.
 	/// </summary>
 	public int MessageTimeoutSeconds { get; init; } = 300;
 
