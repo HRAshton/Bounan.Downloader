@@ -1,14 +1,16 @@
-﻿namespace Bounan.Downloader.Worker.Configuration;
+﻿using JetBrains.Annotations;
 
-public class SqsQueueConfig
+namespace Bounan.Downloader.Worker.Configuration;
+
+public record SqsQueueConfig
 {
 	/// <summary>
 	/// Queue URL.
 	/// </summary>
-	public required Uri QueueUrl { get; init; }
+	public Uri? QueueUrl { get; [UsedImplicitly] init; }
 
 	/// <summary>
 	/// Number of seconds to wait for a message to be available in the queue.
 	/// </summary>
-	public int PoolingWaitTimeSeconds { get; init; } = 20;
+	public int PoolingWaitTimeSeconds { get; [UsedImplicitly] init; } = 20;
 }

@@ -2,8 +2,8 @@ using Bounan.Downloader.Worker.Interfaces;
 
 namespace Bounan.Downloader.Worker;
 
-public class Worker(
-	ILogger<Worker> logger,
+public class WorkerService(
+	ILogger<WorkerService> logger,
 	ISqsService sqsService,
 	IVideoCopyingService videoCopyingService) : BackgroundService
 {

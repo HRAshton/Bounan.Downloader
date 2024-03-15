@@ -8,5 +8,5 @@ public record TelegramConfig
 
 	public required string DestinationChatId { get; init; }
 	
-	public string ApiUrl { get; init; } = "https://api.telegram.org";
+	public Uri ApiUrl { get; init; } = new ("https://api.telegram.org");
 }

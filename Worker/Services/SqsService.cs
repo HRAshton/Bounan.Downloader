@@ -1,4 +1,5 @@
-﻿using Amazon.SQS;
+﻿using System.Diagnostics.CodeAnalysis;
+using Amazon.SQS;
 using Amazon.SQS.Model;
 using Bounan.Downloader.Worker.Configuration;
 using Bounan.Downloader.Worker.Interfaces;
@@ -26,7 +27,7 @@ public class SqsService : ISqsService
 			{
 				QueueUrl = q.QueueUrl!.ToString(),
 				MaxNumberOfMessages = 1,
-				WaitTimeSeconds = q.PoolingWaitTimeSeconds,
+				WaitTimeSeconds = q.PoolingWaitTimeSeconds
 			})
 			.ToArray();
 
@@ -40,6 +41,7 @@ public class SqsService : ISqsService
 			throw new ArgumentException("Invalid pooling wait time");
 		}
 
+		ArgumentNullException.ThrowIfNull(sqsConfig, nameof(sqsConfig));
 		_semaphore = new SemaphoreSlim(sqsConfig.Value.Threads, sqsConfig.Value.Threads);
 	}
 
@@ -49,6 +51,7 @@ public class SqsService : ISqsService
 
 	private IAmazonSQS SqsClient { get; }
 
+	[SuppressMessage("Design", "CA1031:Do not catch general exception types")]
 	public async Task StartProcessing(
 		Func<string, CancellationToken, Task> processMessageFn,
 		CancellationToken cancellationToken)

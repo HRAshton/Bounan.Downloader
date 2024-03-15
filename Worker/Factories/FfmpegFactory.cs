@@ -21,6 +21,7 @@ public class FfmpegFactory : IFfmpegFactory
 	{
 		var ffmpegService = (FfmpegService)ServiceProvider.GetRequiredService<IFfmpegService>();
 		ffmpegService.Run(GetNextFileId(), cancellationToken);
+		Logger.LogDebug("Ffmpeg service created");
 		return ffmpegService;
 	}
 

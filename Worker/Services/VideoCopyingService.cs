@@ -33,6 +33,8 @@ public class VideoCopyingService : IVideoCopyingService
 		FfmpegFactory = ffmpegFactory;
 		TelegramClient = telegramClient;
 
+		ArgumentNullException.ThrowIfNull(telegramConfig, nameof(telegramConfig));
+		ArgumentNullException.ThrowIfNull(videoServiceConfig, nameof(videoServiceConfig));
 		_telegramConfig = telegramConfig.Value;
 		_videoServiceConfig = videoServiceConfig.Value;
 	}
@@ -137,7 +139,7 @@ public class VideoCopyingService : IVideoCopyingService
 		var content = await response.Content.ReadAsStringAsync(cancellationToken);
 		var videoParts = content
 			.Split('\n')
-			.Where(line => line.StartsWith("./"))
+			.Where(line => line.StartsWith("./", StringComparison.Ordinal))
 			.Select(relativeFilePath => new Uri(playlist, relativeFilePath))
 			.ToArray();
 

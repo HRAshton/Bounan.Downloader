@@ -43,10 +43,11 @@ builder.Services.AddTransient<IFfmpegService, FfmpegService>();
 builder.Services.AddSingleton<ITelegramBotClient, TelegramBotClient>(provider =>
 {
 	var telegramConfig = provider.GetRequiredService<IOptions<TelegramConfig>>().Value;
-	return new TelegramBotClient(new TelegramBotClientOptions(telegramConfig.BotToken, telegramConfig.ApiUrl));
+	var clientOptions = new TelegramBotClientOptions(telegramConfig.BotToken, telegramConfig.ApiUrl.ToString());
+	return new TelegramBotClient(clientOptions);
 });
 
-builder.Services.AddHostedService<Worker>();
+builder.Services.AddHostedService<WorkerService>();
 
 var host = builder.Build();
 host.Run();

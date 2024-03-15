@@ -8,23 +8,28 @@
         <DockerDefaultTargetOS>Linux</DockerDefaultTargetOS>
         <RootNamespace>Bounan.Downloader.Worker</RootNamespace>
         <AssemblyName>Bounan.Downloader.Worker</AssemblyName>
+        <EnforceCodeStyleInBuild>true</EnforceCodeStyleInBuild>
+        <EnableNETAnalyzers>true</EnableNETAnalyzers>
+        <AnalysisMode>AllEnabledByDefault</AnalysisMode>
+        <NoWarn>CA2007,CA1848</NoWarn>
     </PropertyGroup>
 
     <ItemGroup>
-        <PackageReference Include="AWS.Logger.AspNetCore" Version="3.4.1" />
-        <PackageReference Include="AWSSDK.SQS" Version="3.7.300.55" />
+        <PackageReference Include="AWS.Logger.AspNetCore" Version="3.4.1"/>
+        <PackageReference Include="AWSSDK.SQS" Version="3.7.300.55"/>
+        <PackageReference Include="JetBrains.Annotations" Version="2023.3.0"/>
         <PackageReference Include="Microsoft.Extensions.Hosting" Version="8.0.0"/>
-        <PackageReference Include="System.IO.Pipelines" Version="9.0.0-preview.2.24128.5" />
-        <PackageReference Include="Telegram.Bot" Version="19.0.0" />
+        <PackageReference Include="System.IO.Pipelines" Version="9.0.0-preview.2.24128.5"/>
+        <PackageReference Include="Telegram.Bot" Version="19.0.0"/>
     </ItemGroup>
 
     <ItemGroup>
-      <Content Include="..\.dockerignore">
-        <Link>.dockerignore</Link>
-      </Content>
+        <Content Include="..\.dockerignore">
+            <Link>.dockerignore</Link>
+        </Content>
     </ItemGroup>
 
     <ItemGroup>
-      <ProjectReference Include="..\LoanApi\LoanApi\LoanApi.csproj" />
+        <ProjectReference Include="..\LoanApi\LoanApi\LoanApi.csproj"/>
     </ItemGroup>
 </Project>

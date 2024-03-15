@@ -9,6 +9,9 @@ public static class PipeExtensions
 		Stream outputStream,
 		CancellationToken cancellationToken)
 	{
+		ArgumentNullException.ThrowIfNull(pipeReader, nameof(pipeReader));
+		ArgumentNullException.ThrowIfNull(outputStream, nameof(outputStream));
+		
 		while (true)
 		{
 			var result = await pipeReader.ReadAsync(cancellationToken);

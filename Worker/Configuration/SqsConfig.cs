@@ -24,5 +24,5 @@ public record SqsConfig
 	/// <summary>
 	/// Configuration for the SQS queues in priority order.
 	/// </summary>
-	public required ICollection<SqsQueueConfig> Queues { get; init; }
+	public required IReadOnlyCollection<SqsQueueConfig> Queues { get; init; }
 }

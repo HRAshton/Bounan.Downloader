@@ -21,14 +21,19 @@ public static class SemiConcurrentProcessingHelper
 		int concurrency,
 		CancellationToken cancellationToken)
 	{
-		var allAreDifferent = items.Distinct().Count() == items.Count;
+		ArgumentNullException.ThrowIfNull(items, nameof(items));
+		ArgumentNullException.ThrowIfNull(concurrentCallback, nameof(concurrentCallback));
+		ArgumentNullException.ThrowIfNull(ordinalCallback, nameof(ordinalCallback));
+        ArgumentOutOfRangeException.ThrowIfLessThan(concurrency, 1);
+
+        var allAreDifferent = items.Distinct().Count() == items.Count;
 		if (!allAreDifferent)
 		{
 			throw new ArgumentException("All URLs should be different");
 		}
 
-		var concurrentSemaphore = new SemaphoreSlim(concurrency, concurrency);
-		var ordinalSemaphore = new SemaphoreSlim(1, 1);
+		using var concurrentSemaphore = new SemaphoreSlim(concurrency, concurrency);
+		using var ordinalSemaphore = new SemaphoreSlim(1, 1);
 
 		var statuses = items.Select(_ => Status.Waiting).ToArray();
 		var results = items.Select(_ => default(TFirstCallbackResult)).ToArray();
@@ -107,6 +112,6 @@ public static class SemiConcurrentProcessingHelper
 	{
 		Waiting,
 		ProcessedByFirst,
-		ProcessedBySecond,
+		ProcessedBySecond
 	}
 }

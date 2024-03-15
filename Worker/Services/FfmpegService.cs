@@ -1,4 +1,5 @@
 ﻿using System.Diagnostics;
+using System.Globalization;
 using System.IO.Pipelines;
 using System.Text;
 using System.Text.RegularExpressions;
@@ -15,19 +16,23 @@ public partial class FfmpegService : IFfmpegService
 	private readonly Regex _resolutionRegex = ResolutionRegex();
 	private readonly Regex _durationRegex = DurationRegex();
 
+	private bool _isDisposed;
 	private readonly VideoServiceConfig _videoServiceConfig;
-	private string _filePath;
 	private readonly Pipe _pipe = new ();
 	private readonly Stream _pipeReaderStream;
 	private readonly StringBuilder _ffmpegStderrOutputBuilder = new ();
+	private string? _filePath;
 	private Process? _ffmpegProcess;
-	private Task _stdinStreamTask;
-	private Task _errorsTask;
+	private Task? _stdinStreamTask;
+	private Task? _errorsTask;
 
 	public FfmpegService(
 		ILogger<FfmpegService> logger,
 		IOptions<VideoServiceConfig> videoServiceConfig)
 	{
+		ArgumentNullException.ThrowIfNull(logger, nameof(logger));
+		ArgumentNullException.ThrowIfNull(videoServiceConfig, nameof(videoServiceConfig));
+
 		_videoServiceConfig = videoServiceConfig.Value;
 		Logger = logger;
 
@@ -38,32 +43,49 @@ public partial class FfmpegService : IFfmpegService
 
 	public PipeWriter PipeWriter => _pipe.Writer;
 
+	// Dispose() calls Dispose(true)
 	public void Dispose()
 	{
-		Logger.LogDebug("Disposing ffmpeg service");
-		_pipe.Writer.Complete();
-		_stdinStreamTask.Wait();
-		_errorsTask.Wait();
-		_ffmpegProcess?.Dispose();
-		_pipeReaderStream.Dispose();
-		File.Delete(_filePath);
-		Logger.LogDebug("Ffmpeg service disposed");
-
+		Dispose(true);
 		GC.SuppressFinalize(this);
+	}
+
+	// The bulk of the clean-up code is implemented in Dispose(bool)
+	protected virtual void Dispose(bool disposing)
+	{
+		if (_isDisposed) return;
+
+		if (disposing)
+		{
+			Logger.LogDebug("Disposing ffmpeg service");
+
+			_pipe.Writer.Complete();
+			_stdinStreamTask?.Wait();
+			_errorsTask?.Wait();
+			_ffmpegProcess?.Dispose();
+			_pipeReaderStream.Dispose();
+			if (_filePath is not null && File.Exists(_filePath))
+			{
+				File.Delete(_filePath);
+			}
+
+			Logger.LogDebug("Ffmpeg service disposed");
+		}
+
+		_isDisposed = true;
 	}
 
 	public void Run(string fileId, CancellationToken cancellationToken)
 	{
-		_filePath = string.Format(_videoServiceConfig.TempVideoFilePattern, fileId);
+		_filePath = string.Format(CultureInfo.InvariantCulture, _videoServiceConfig.TempVideoFilePattern, fileId);
 		RunInternal(cancellationToken);
 	}
 
 	public async Task<VideoInfo> GetResultAsync(CancellationToken cancellationToken)
 	{
-		if (_filePath is null)
-		{
-			throw new InvalidOperationException("File path is not set");
-		}
+		ArgumentNullException.ThrowIfNull(_filePath, nameof(_filePath));
+		ArgumentNullException.ThrowIfNull(_ffmpegProcess, nameof(_ffmpegProcess));
+		ArgumentNullException.ThrowIfNull(_stdinStreamTask, nameof(_stdinStreamTask));
 
 		await _stdinStreamTask;
 		await _ffmpegProcess!.WaitForExitAsync(cancellationToken);
@@ -71,20 +93,22 @@ public partial class FfmpegService : IFfmpegService
 		var ffmpegStderrOutput = _ffmpegStderrOutputBuilder.ToString();
 		var resolution = _resolutionRegex.Matches(ffmpegStderrOutput).Last().Groups;
 		var durationParts = _durationRegex.Matches(ffmpegStderrOutput).Last().Groups;
-		var duration = int.Parse(durationParts[1].Value) * 3600
-		               + int.Parse(durationParts[2].Value) * 60
-		               + int.Parse(durationParts[3].Value)
-		               + (int)Math.Ceiling(int.Parse(durationParts[4].Value) / 100.0);
+		var duration = int.Parse(durationParts[1].Value, CultureInfo.InvariantCulture) * 3600
+		               + int.Parse(durationParts[2].Value, CultureInfo.InvariantCulture) * 60
+		               + int.Parse(durationParts[3].Value, CultureInfo.InvariantCulture)
+		               + (int)Math.Ceiling(int.Parse(durationParts[4].Value, CultureInfo.InvariantCulture) / 100.0);
 
 		return new VideoInfo(
 			_filePath,
-			int.Parse(resolution[1].Value),
-			int.Parse(resolution[2].Value),
+			int.Parse(resolution[1].Value, CultureInfo.InvariantCulture),
+			int.Parse(resolution[2].Value, CultureInfo.InvariantCulture),
 			duration);
 	}
 
 	private void RunInternal(CancellationToken cancellationToken)
 	{
+		ArgumentNullException.ThrowIfNull(_filePath, nameof(_filePath));
+
 		Logger.LogDebug("Starting ffmpeg instance");
 
 		_ffmpegProcess = RunFfmpeg(_filePath);
@@ -119,16 +143,12 @@ public partial class FfmpegService : IFfmpegService
 			RedirectStandardInput = true,
 			RedirectStandardError = true,
 			UseShellExecute = false,
-			CreateNoWindow = true,
+			CreateNoWindow = true
 		};
 
-		var process = Process.Start(processStartInfo);
-		if (process == null)
-		{
-			throw new Exception("Failed to start ffmpeg process");
-		}
-
-		return process;
+		var process = Process.Start(processStartInfo)
+		              ?? throw new InvalidOperationException("Failed to start ffmpeg process");
+        return process;
 	}
 
 	[GeneratedRegex(@"Video: .*? (\d{3,4})x(\d{3,4})", RegexOptions.Compiled)]
