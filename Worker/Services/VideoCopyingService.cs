@@ -1,5 +1,4 @@
 ﻿using Bounan.Downloader.Worker.Configuration;
-using Bounan.Downloader.Worker.Extensions;
 using Bounan.Downloader.Worker.Helpers;
 using Bounan.Downloader.Worker.Interfaces;
 using Bounan.Downloader.Worker.Models;
@@ -53,8 +52,6 @@ public class VideoCopyingService : IVideoCopyingService
 
 	public async Task ProcessVideo(string message, CancellationToken cancellationToken)
 	{
-		using var _ = Logger.BeginScope("msgId={Hash}", message.CalculateHash());
-
 		if (!LinkValidator.IsValidSignedLink(message))
 		{
 			throw new ArgumentException("Invalid signed url");

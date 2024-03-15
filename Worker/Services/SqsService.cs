@@ -2,13 +2,15 @@
 using Amazon.SQS;
 using Amazon.SQS.Model;
 using Bounan.Downloader.Worker.Configuration;
+using Bounan.Downloader.Worker.Extensions;
 using Bounan.Downloader.Worker.Interfaces;
 using Microsoft.Extensions.Options;
 
 namespace Bounan.Downloader.Worker.Services;
 
-public class SqsService : ISqsService
+public class SqsService : ISqsService, IDisposable
 {
+	private bool _isDisposed;
 	private readonly ReceiveMessageRequest[] _receiveMessageRequests;
 	private readonly SemaphoreSlim _semaphore;
 
@@ -31,17 +33,13 @@ public class SqsService : ISqsService
 			})
 			.ToArray();
 
-		if (_receiveMessageRequests.Length == 0)
-		{
-			throw new ArgumentException("No valid queues configured");
-		}
-
+		ArgumentNullException.ThrowIfNull(sqsConfig, nameof(sqsConfig));
+		ArgumentOutOfRangeException.ThrowIfZero(_receiveMessageRequests.Length);
 		if (_receiveMessageRequests.Any(r => r.WaitTimeSeconds is < 1 or > 20))
 		{
 			throw new ArgumentException("Invalid pooling wait time");
 		}
 
-		ArgumentNullException.ThrowIfNull(sqsConfig, nameof(sqsConfig));
 		_semaphore = new SemaphoreSlim(sqsConfig.Value.Threads, sqsConfig.Value.Threads);
 	}
 
@@ -50,6 +48,25 @@ public class SqsService : ISqsService
 	private ILogger<SqsService> Logger { get; }
 
 	private IAmazonSQS SqsClient { get; }
+
+	public void Dispose()
+	{
+		Dispose(true);
+		GC.SuppressFinalize(this);
+	}
+
+	protected virtual void Dispose(bool disposing)
+	{
+		if (_isDisposed) return;
+
+		if (disposing)
+		{
+			Logger.LogDebug("Disposing sqs service");
+			_semaphore.Dispose();
+		}
+
+		_isDisposed = true;
+	}
 
 	[SuppressMessage("Design", "CA1031:Do not catch general exception types")]
 	public async Task StartProcessing(
@@ -60,28 +77,28 @@ public class SqsService : ISqsService
 		while (!cancellationToken.IsCancellationRequested && sequentialErrors < SqsConfig.Value.MaxSequentialErrors)
 		{
 			await _semaphore.WaitAsync(cancellationToken).ConfigureAwait(false);
+			_ = Task.Run(TryProcess, cancellationToken);
+			continue;
 
-			_ = Task.Run(
-				async () =>
+			async Task? TryProcess()
+			{
+				try
 				{
-					try
-					{
-						await TryProcessNextMessage(processMessageFn, cancellationToken);
-						Interlocked.Exchange(ref sequentialErrors, 0);
-					}
-					catch (Exception ex)
-					{
-						Interlocked.Increment(ref sequentialErrors);
-						Logger.LogError(ex, "Error processing message");
-						Logger.LogError(ex.InnerException, "Error processing message");
-						await Task.Delay(5000, cancellationToken);
-					}
-					finally
-					{
-						_semaphore.Release();
-					}
-				},
-				cancellationToken);
+					await TryProcessNextMessage(processMessageFn, cancellationToken);
+					Interlocked.Exchange(ref sequentialErrors, 0);
+				}
+				catch (Exception ex)
+				{
+					Interlocked.Increment(ref sequentialErrors);
+					Logger.LogError(ex, "Error processing message");
+					Logger.LogError(ex.InnerException, "Error processing message");
+					await Task.Delay(5000, cancellationToken);
+				}
+				finally
+				{
+					_semaphore.Release();
+				}
+			}
 		}
 	}
 
@@ -95,20 +112,18 @@ public class SqsService : ISqsService
 			return;
 		}
 
-		Logger.LogInformation(
-			"Processing message: {MessageId} from queue {QueueIndex}",
-			response.Messages[0].MessageId,
-			queueIndex);
+		ArgumentOutOfRangeException.ThrowIfNotEqual(response.Messages.Count, 1);
+		var message = response.Messages[0];
+		using var _ = Logger.BeginScope("msgId={Hash}", message.Body.CalculateHash());
 
 		var cancellationTokenSource = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
 		cancellationTokenSource.CancelAfter(TimeSpan.FromSeconds(SqsConfig.Value.MessageTimeoutSeconds));
 		var messageCancellationToken = cancellationTokenSource.Token;
 
-		var message = response.Messages[0];
+		Logger.LogInformation("Processing message: {MessageId} from queue {QueueIndex}", message.MessageId, queueIndex);
 		await processMessage(message.Body, messageCancellationToken);
 
 		Logger.LogInformation("Deleting message: {MessageId}", message.MessageId);
-
 		await SqsClient.DeleteMessageAsync(
 			_receiveMessageRequests[queueIndex].QueueUrl,
 			message.ReceiptHandle,
