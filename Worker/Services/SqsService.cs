@@ -8,7 +8,7 @@ using Microsoft.Extensions.Options;
 
 namespace Bounan.Downloader.Worker.Services;
 
-public class SqsService : ISqsService, IDisposable
+public partial class SqsService : ISqsService, IDisposable
 {
 	private bool _isDisposed;
 	private readonly ReceiveMessageRequest[] _receiveMessageRequests;
@@ -61,7 +61,7 @@ public class SqsService : ISqsService, IDisposable
 
 		if (disposing)
 		{
-			Logger.LogDebug("Disposing sqs service");
+			Log.DisposingSqsService(Logger);
 			_semaphore.Dispose();
 		}
 
@@ -90,8 +90,7 @@ public class SqsService : ISqsService, IDisposable
 				catch (Exception ex)
 				{
 					Interlocked.Increment(ref sequentialErrors);
-					Logger.LogError(ex, "Error processing message");
-					Logger.LogError(ex.InnerException, "Error processing message");
+					Log.ErrorProcessingMessage(Logger, ex.Message);
 					await Task.Delay(5000, cancellationToken);
 				}
 				finally
@@ -114,16 +113,16 @@ public class SqsService : ISqsService, IDisposable
 
 		ArgumentOutOfRangeException.ThrowIfNotEqual(response.Messages.Count, 1);
 		var message = response.Messages[0];
-		using var _ = Logger.BeginScope("msgId={Hash}", message.Body.CalculateHash());
+		using var _ = Log.BeginScope(Logger, message.Body.CalculateHash());
 
 		var cancellationTokenSource = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
 		cancellationTokenSource.CancelAfter(TimeSpan.FromSeconds(SqsConfig.Value.MessageTimeoutSeconds));
 		var messageCancellationToken = cancellationTokenSource.Token;
 
-		Logger.LogInformation("Processing message: {MessageId} from queue {QueueIndex}", message.MessageId, queueIndex);
+		Log.ProcessingMessage(Logger, message.Body, queueIndex);
 		await processMessage(message.Body, messageCancellationToken);
 
-		Logger.LogInformation("Deleting message: {MessageId}", message.MessageId);
+		Log.DeletingMessage(Logger, message.MessageId);
 		await SqsClient.DeleteMessageAsync(
 			_receiveMessageRequests[queueIndex].QueueUrl,
 			message.ReceiptHandle,

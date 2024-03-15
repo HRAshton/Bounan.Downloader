@@ -57,7 +57,7 @@ public partial class FfmpegService : IFfmpegService
 
 		if (disposing)
 		{
-			Logger.LogDebug("Disposing ffmpeg service");
+			Log.DisposingFfmpegService(Logger);
 
 			_pipe.Writer.Complete();
 			_stdinStreamTask?.Wait();
@@ -69,7 +69,7 @@ public partial class FfmpegService : IFfmpegService
 				File.Delete(_filePath);
 			}
 
-			Logger.LogDebug("Ffmpeg service disposed");
+			Log.FfmpegServiceDisposed(Logger);
 		}
 
 		_isDisposed = true;
@@ -109,13 +109,13 @@ public partial class FfmpegService : IFfmpegService
 	{
 		ArgumentNullException.ThrowIfNull(_filePath, nameof(_filePath));
 
-		Logger.LogDebug("Starting ffmpeg instance");
+		Log.StartingFfmpegInstance(Logger, _filePath);
 
 		_ffmpegProcess = RunFfmpeg(_filePath);
 		var killRegistration = cancellationToken.Register(() => _ffmpegProcess.Kill());
 		_ffmpegProcess.Exited += (_, _) =>
 		{
-			Logger.LogDebug("Ffmpeg process exited with code {ExitCode}", _ffmpegProcess.ExitCode);
+			Log.FfmpegProcessExited(Logger, _ffmpegProcess.ExitCode);
 			killRegistration.Unregister();
 		};
 
@@ -126,7 +126,7 @@ public partial class FfmpegService : IFfmpegService
 				{
 					var line = _ffmpegProcess.StandardError.ReadLine();
 					_ffmpegStderrOutputBuilder.AppendLine(line);
-					Logger.LogTrace("{Line}", line);
+					Log.FfmpegStderrOutput(Logger, line);
 				}
 			},
 			cancellationToken);
@@ -148,7 +148,7 @@ public partial class FfmpegService : IFfmpegService
 
 		var process = Process.Start(processStartInfo)
 		              ?? throw new InvalidOperationException("Failed to start ffmpeg process");
-        return process;
+		return process;
 	}
 
 	[GeneratedRegex(@"Video: .*? (\d{3,4})x(\d{3,4})", RegexOptions.Compiled)]

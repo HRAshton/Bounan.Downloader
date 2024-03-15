@@ -10,7 +10,7 @@ using File = System.IO.File;
 
 namespace Bounan.Downloader.Worker.Services;
 
-public class VideoCopyingService : IVideoCopyingService
+public partial class VideoCopyingService : IVideoCopyingService
 {
 	private readonly TelegramConfig _telegramConfig;
 	private readonly VideoServiceConfig _videoServiceConfig;
@@ -40,11 +40,11 @@ public class VideoCopyingService : IVideoCopyingService
 
 	private ILogger<VideoCopyingService> Logger { get; }
 
+	private HttpClient HttpClient { get; }
+
 	private ILinkValidator LinkValidator { get; }
 
 	private ILoanApiClient LoanApiClient { get; }
-
-	private HttpClient HttpClient { get; }
 
 	private IFfmpegFactory FfmpegFactory { get; }
 
@@ -58,14 +58,14 @@ public class VideoCopyingService : IVideoCopyingService
 		}
 
 		var signedUri = new Uri(message);
-		Logger.LogDebug("Processing video: {SignedUrl}", signedUri);
+		Log.ProcessingVideo(Logger, signedUri);
 
 		using var ffmpegService = FfmpegFactory.CreateFfmpegService(cancellationToken);
 		var (videoInfo, thumbnail) = await DownloadAndMergeVideoAsync(signedUri, ffmpegService, cancellationToken);
-		Logger.LogDebug("Got video info: {VideoInfo}", videoInfo);
+		Log.GotVideoInfo(Logger, videoInfo);
 
 		var fileId = await UploadVideoAsync(videoInfo, thumbnail, message, cancellationToken);
-		Logger.LogInformation("Video uploaded with file id: {FileId}", fileId);
+		Log.VideoUploaded(Logger, fileId);
 	}
 
 	private async Task<(VideoInfo VideoInfo, Uri Thumbnail)> DownloadAndMergeVideoAsync(
@@ -74,26 +74,26 @@ public class VideoCopyingService : IVideoCopyingService
 		CancellationToken cancellationToken)
 	{
 		var (playlists, thumb) = await LoanApiClient.GetPlaylistsAndThumbnailUrlsAsync(signedUri, cancellationToken);
-		Logger.LogDebug("Got playlists and thumb: {Playlists} {Thumbnail}", string.Join(',', playlists), thumb);
+		Log.GotPlaylistsAndThumbnail(Logger, playlists, thumb);
 
 		var bestQualityPlaylist = playlists.Last().Value;
-		Logger.LogDebug("Processing playlist: {Playlist}", bestQualityPlaylist);
+		Log.ProcessingPlaylist(Logger, bestQualityPlaylist);
 
 		var videoParts = await GetVideoPartsAsync(bestQualityPlaylist, cancellationToken);
-		Logger.LogDebug("Got video parts: {VideoParts}", string.Join(',', videoParts));
+		Log.GotVideoParts(Logger, videoParts);
 
 		await SemiConcurrentProcessingHelper.Process(
 			videoParts,
 			async (uri, i, total, ct) =>
 			{
 				var response = await HttpClient.GetByteArrayAsync(uri, ct);
-				Logger.LogTrace("Downloaded part {Index}/{Total}", i + 1, total);
+				Log.DownloadedPart(Logger, i + 1, total);
 				return response;
 			},
 			async (bytes, i, total, ct) =>
 			{
 				await ffmpegService.PipeWriter.WriteAsync(bytes, ct);
-				Logger.LogTrace("Processed part {Index}/{Total}", i + 1, total);
+				Log.ProcessedPart(Logger, i + 1, total);
 			},
 			_videoServiceConfig.ConcurrentDownloads,
 			cancellationToken);
@@ -123,7 +123,7 @@ public class VideoCopyingService : IVideoCopyingService
 			thumbnail: new InputFileStream(thumbStream),
 			supportsStreaming: true,
 			cancellationToken: cancellationToken);
-		Logger.LogDebug("Video uploaded");
+		Log.VideoUploaded(Logger);
 
 		var fileId = message.Video!.FileId;
 

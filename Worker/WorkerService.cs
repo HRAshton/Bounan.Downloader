@@ -2,7 +2,7 @@ using Bounan.Downloader.Worker.Interfaces;
 
 namespace Bounan.Downloader.Worker;
 
-public class WorkerService(
+public partial class WorkerService(
 	ILogger<WorkerService> logger,
 	ISqsService sqsService,
 	IVideoCopyingService videoCopyingService) : BackgroundService
@@ -11,7 +11,7 @@ public class WorkerService(
 	{
 		if (logger.IsEnabled(LogLevel.Information))
 		{
-			logger.LogInformation("Worker running at: {Time}", DateTimeOffset.Now);
+			Log.WorkerRunning(logger, DateTimeOffset.Now);
 		}
 
 		await sqsService.StartProcessing(videoCopyingService.ProcessVideo, stoppingToken);

@@ -3,7 +3,7 @@ using Bounan.Downloader.Worker.Services;
 
 namespace Bounan.Downloader.Worker.Factories;
 
-public class FfmpegFactory : IFfmpegFactory
+public partial class FfmpegFactory : IFfmpegFactory
 {
 	public FfmpegFactory(
 		ILogger<FfmpegFactory> logger,
@@ -21,7 +21,7 @@ public class FfmpegFactory : IFfmpegFactory
 	{
 		var ffmpegService = (FfmpegService)ServiceProvider.GetRequiredService<IFfmpegService>();
 		ffmpegService.Run(GetNextFileId(), cancellationToken);
-		Logger.LogDebug("Ffmpeg service created");
+		Log.FfmpegServiceCreated(Logger);
 		return ffmpegService;
 	}
 
