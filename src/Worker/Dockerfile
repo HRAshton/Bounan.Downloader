@@ -3,7 +3,7 @@
 VOLUME /tmp/bounan-downloader
 
 # Allow $APP_UID rw files in the volume
-RUN mkdir /tmp/bounan-downloader && chown -R $APP_UID /tmp/bounan-downloader
+RUN chown -R $APP_UID /tmp/bounan-downloader
 
 RUN apt-get update \
     && apt-get install -y ffmpeg \
@@ -15,11 +15,13 @@ WORKDIR /app
 FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build
 ARG BUILD_CONFIGURATION=Release
 WORKDIR /src
+
 COPY ["LoanApi/LoanApi/LoanApi.csproj", "LoanApi/LoanApi/"]
 COPY ["Worker/Worker.csproj", "Worker/"]
 RUN dotnet restore "Worker/Worker.csproj"
+
 COPY . .
-WORKDIR "/src/Worker"
+WORKDIR /src/Worker
 RUN dotnet build "Worker.csproj" -c $BUILD_CONFIGURATION -o /app/build
 
 FROM build AS publish
