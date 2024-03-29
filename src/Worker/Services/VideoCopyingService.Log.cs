@@ -1,4 +1,5 @@
-﻿using Bounan.Downloader.Worker.Models;
+﻿using Bounan.Common.Models;
+using Bounan.Downloader.Worker.Models;
 
 namespace Bounan.Downloader.Worker.Services;
 
@@ -6,6 +7,9 @@ public partial class VideoCopyingService
 {
 	private static partial class Log
 	{
+		[LoggerMessage(LogLevel.Information, "Received video key: {VideoKey}")]
+		public static partial void ReceivedVideoKey(ILogger<VideoCopyingService> logger, IVideoKey videoKey);
+
 		[LoggerMessage(LogLevel.Debug, "Processing video {SignedUrl}")]
 		public static partial void ProcessingVideo(ILogger logger, Uri signedUrl);
 
@@ -35,5 +39,11 @@ public partial class VideoCopyingService
 
 		[LoggerMessage(LogLevel.Debug, "Video uploaded")]
 		public static partial void VideoUploaded(ILogger logger);
+
+		[LoggerMessage(LogLevel.Error, "Error processing video: {Exception}")]
+		public static partial void ErrorProcessingVideo(ILogger logger, Exception exception);
+
+		[LoggerMessage(LogLevel.Information, "Result sent: {Result}")]
+		public static partial void ResultSent(ILogger logger, IDwnResultNotification result);
 	}
 }

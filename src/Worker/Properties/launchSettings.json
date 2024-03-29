@@ -6,19 +6,17 @@
       "dotnetRunMessages": true,
       "environmentVariables": {
         "DOTNET_ENVIRONMENT": "Development",
-        "AWS_REGION": "eu-north-1",
+        "AWS_REGION": "",
         "AWS_ACCESS_KEY_ID": "",
         "AWS_SECRET_ACCESS_KEY": "",
-        "TELEGRAM_API_ID": "",
-        "TELEGRAM_API_HASH": "",
+        "LoanApi__Token": "",
         "Logging__AwsLogger__LogGroup": "",
         "Telegram__ApiUrl": "",
         "Telegram__BotToken": "",
         "Telegram__DestinationChatId": "",
-        "VideoService__ConcurrentDownloads": "",
-        "SqsConfig__Threads": "3",
-        "SqsConfig__Queues__0__QueueUrl": "",
-        "SqsConfig__Queues__1__QueueUrl": ""
+        "AniMan__GetVideoToDownloadLambdaFunctionName": "",
+        "AniMan__UpdateVideoStatusLambdaFunctionName": "",
+        "AniMan__NotificationQueueUrl": ""
       }
     }
   }

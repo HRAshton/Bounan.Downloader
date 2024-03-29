@@ -1,9 +1,12 @@
-﻿using Bounan.Downloader.Worker.Configuration;
+﻿using System.Diagnostics.CodeAnalysis;
+using Bounan.Common.Models;
+using Bounan.Downloader.Worker.Configuration;
 using Bounan.Downloader.Worker.Helpers;
 using Bounan.Downloader.Worker.Interfaces;
 using Bounan.Downloader.Worker.Models;
 using Bounan.LoanApi.Interfaces;
 using Microsoft.Extensions.Options;
+using Newtonsoft.Json;
 using Telegram.Bot;
 using Telegram.Bot.Types;
 using File = System.IO.File;
@@ -20,17 +23,21 @@ public partial class VideoCopyingService : IVideoCopyingService
 		IOptions<VideoServiceConfig> videoServiceConfig,
 		IOptions<TelegramConfig> telegramConfig,
 		ILinkValidator linkValidator,
-		ILoanApiClient loanApiClient,
+		ILoanApiComClient loanApiComClient,
+		ILoanApiInfoClient loanApiInfoClient,
 		HttpClient httpClient,
 		IFfmpegFactory ffmpegFactory,
-		ITelegramBotClient telegramClient)
+		ITelegramBotClient telegramClient,
+		IAniManClient aniManClient)
 	{
 		Logger = logger;
 		LinkValidator = linkValidator;
-		LoanApiClient = loanApiClient;
+		LoanApiComClient = loanApiComClient;
+		LoanApiInfoClient = loanApiInfoClient;
 		HttpClient = httpClient;
 		FfmpegFactory = ffmpegFactory;
 		TelegramClient = telegramClient;
+		AniManClient = aniManClient;
 
 		ArgumentNullException.ThrowIfNull(telegramConfig, nameof(telegramConfig));
 		ArgumentNullException.ThrowIfNull(videoServiceConfig, nameof(videoServiceConfig));
@@ -40,32 +47,64 @@ public partial class VideoCopyingService : IVideoCopyingService
 
 	private ILogger<VideoCopyingService> Logger { get; }
 
+	private IAniManClient AniManClient { get; }
+
 	private HttpClient HttpClient { get; }
 
 	private ILinkValidator LinkValidator { get; }
 
-	private ILoanApiClient LoanApiClient { get; }
+	private ILoanApiComClient LoanApiComClient { get; }
+
+	private ILoanApiInfoClient LoanApiInfoClient { get; }
 
 	private IFfmpegFactory FfmpegFactory { get; }
 
 	private ITelegramBotClient TelegramClient { get; }
 
-	public async Task ProcessVideo(string message, CancellationToken cancellationToken)
+	[SuppressMessage("Design", "CA1031:Do not catch general exception types")]
+	public async Task ProcessVideo(IVideoKey videoKey, CancellationToken cancellationToken)
 	{
-		if (!LinkValidator.IsValidSignedLink(message))
+		Log.ReceivedVideoKey(Logger, videoKey);
+		using var innerCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+		innerCts.CancelAfter(_videoServiceConfig.TimeoutSeconds * 1000);
+
+		ArgumentNullException.ThrowIfNull(videoKey);
+		try
+		{
+			var signedUri = await FindSignedLink(videoKey);
+			Log.ProcessingVideo(Logger, signedUri);
+
+			using var ffmpegService = FfmpegFactory.CreateFfmpegService(innerCts.Token);
+			var (videoInfo, thumbnail) = await DownloadAndMergeVideoAsync(signedUri, ffmpegService, innerCts.Token);
+			Log.GotVideoInfo(Logger, videoInfo);
+
+			var videoMetadata = new VideoMetadata(videoKey, signedUri.ToString());
+
+			var fileId = await UploadVideoAsync(videoInfo, thumbnail, videoMetadata, innerCts.Token);
+			Log.VideoUploaded(Logger, fileId);
+
+			await SendResult(videoKey, fileId, cancellationToken);
+		}
+		catch (Exception e)
+		{
+			Log.ErrorProcessingVideo(Logger, e);
+			await SendResult(videoKey, null, cancellationToken);
+		}
+	}
+
+	private async Task<Uri> FindSignedLink(IVideoKey videoKey)
+	{
+		var searchResult = await LoanApiComClient.SearchAsync(videoKey.MyAnimeListId, CancellationToken.None);
+		var bestQualityVideo = searchResult
+			.LastOrDefault(res => res.Dub == videoKey.Dub && res.Episode == videoKey.Episode);
+
+		var signedLink = bestQualityVideo?.SignedLink ?? string.Empty;
+		if (!LinkValidator.IsValidSignedLink(signedLink))
 		{
 			throw new ArgumentException("Invalid signed url");
 		}
 
-		var signedUri = new Uri(message);
-		Log.ProcessingVideo(Logger, signedUri);
-
-		using var ffmpegService = FfmpegFactory.CreateFfmpegService(cancellationToken);
-		var (videoInfo, thumbnail) = await DownloadAndMergeVideoAsync(signedUri, ffmpegService, cancellationToken);
-		Log.GotVideoInfo(Logger, videoInfo);
-
-		var fileId = await UploadVideoAsync(videoInfo, thumbnail, message, cancellationToken);
-		Log.VideoUploaded(Logger, fileId);
+		return new Uri(signedLink);
 	}
 
 	private async Task<(VideoInfo VideoInfo, Uri Thumbnail)> DownloadAndMergeVideoAsync(
@@ -73,7 +112,8 @@ public partial class VideoCopyingService : IVideoCopyingService
 		IFfmpegService ffmpegService,
 		CancellationToken cancellationToken)
 	{
-		var (playlists, thumb) = await LoanApiClient.GetPlaylistsAndThumbnailUrlsAsync(signedUri, cancellationToken);
+		var (playlists, thumb) =
+			await LoanApiInfoClient.GetPlaylistsAndThumbnailUrlsAsync(signedUri, cancellationToken);
 		Log.GotPlaylistsAndThumbnail(Logger, playlists, thumb);
 
 		var bestQualityPlaylist = playlists.Last().Value;
@@ -107,7 +147,7 @@ public partial class VideoCopyingService : IVideoCopyingService
 	private async Task<string> UploadVideoAsync(
 		VideoInfo videoInfo,
 		Uri thumbnailUri,
-		string originalSignedLink,
+		VideoMetadata videoMetadata,
 		CancellationToken cancellationToken)
 	{
 		await using var fileStream = File.OpenRead(videoInfo.FilePath);
@@ -116,7 +156,7 @@ public partial class VideoCopyingService : IVideoCopyingService
 		var message = await TelegramClient.SendVideoAsync(
 			_telegramConfig.DestinationChatId,
 			new InputFileStream(fileStream),
-			caption: originalSignedLink,
+			caption: JsonConvert.SerializeObject(videoMetadata),
 			width: videoInfo.Width,
 			height: videoInfo.Height,
 			duration: videoInfo.DurationSec,
@@ -126,7 +166,6 @@ public partial class VideoCopyingService : IVideoCopyingService
 		Log.VideoUploaded(Logger);
 
 		var fileId = message.Video!.FileId;
-
 		return fileId;
 	}
 
@@ -141,5 +180,12 @@ public partial class VideoCopyingService : IVideoCopyingService
 			.ToArray();
 
 		return videoParts;
+	}
+
+	private async Task SendResult(IVideoKey videoKey, string? fileId, CancellationToken cancellationToken)
+	{
+		var dwnResult = new DwnResultNotification(videoKey.MyAnimeListId, videoKey.Dub, videoKey.Episode, fileId);
+		await AniManClient.SendResult(dwnResult, cancellationToken);
+		Log.ResultSent(Logger, dwnResult);
 	}
 }

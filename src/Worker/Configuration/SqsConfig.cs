@@ -2,27 +2,15 @@
 
 public record SqsConfig
 {
-	public static readonly string SectionName = "SqsConfig";
+	public static readonly string SectionName = "Sqs";
 
 	/// <summary>
-	/// Number of threads to process messages in parallel.
+	/// Number of seconds to wait for a message.
 	/// </summary>
-	public int Threads { get; init; } = 1;
+	public int PollingIntervalSeconds { get; init; } = 20;
 
 	/// <summary>
-	/// Number of seconds to wait for a message to be processed before it is considered failed.
-	/// It is recommended to set this value to a value lower than the message visibility timeout
-	/// to avoid processing the same broken message multiple times.
+	/// Number of seconds to wait before retrying after an error.
 	/// </summary>
-	public int MessageTimeoutSeconds { get; init; } = 300;
-
-	/// <summary>
-	/// Maximum number of sequential errors before the service stops processing messages.
-	/// </summary>
-	public int MaxSequentialErrors { get; init; } = 3;
-
-	/// <summary>
-	/// Configuration for the SQS queues in priority order.
-	/// </summary>
-	public required IReadOnlyCollection<SqsQueueConfig> Queues { get; init; }
+	public int ErrorRetryIntervalSeconds { get; init; } = 5;
 }

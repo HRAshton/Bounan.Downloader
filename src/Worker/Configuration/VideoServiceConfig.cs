@@ -13,4 +13,9 @@ public record VideoServiceConfig
 	/// Pattern for temporary video files. {0} is replaced with a guid.
 	/// </summary>
 	public string TempVideoFilePattern { get; init; } = "video-{0}.mp4";
+
+	/// <summary>
+	/// Number of seconds to wait for a video to be processed before it is considered failed.
+	/// </summary>
+	public int TimeoutSeconds { get; init; } = 300;
 }

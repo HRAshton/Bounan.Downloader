@@ -1,8 +1,10 @@
-﻿namespace Bounan.Downloader.Worker.Extensions;
+﻿using System.Globalization;
+
+namespace Bounan.Downloader.Worker.Extensions;
 
 public static class StringExtensions
 {
-	public static ulong CalculateHash(this string str)
+	public static string CalculateHash(this string str)
 	{
 		ArgumentNullException.ThrowIfNull(str, nameof(str));
 
@@ -13,6 +15,6 @@ public static class StringExtensions
 			hashedValue *= 3074457345618258799ul;
 		}
 
-		return hashedValue;
+		return hashedValue.ToString("X", CultureInfo.InvariantCulture);
 	}
 }
