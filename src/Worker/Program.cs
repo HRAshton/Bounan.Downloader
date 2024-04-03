@@ -1,14 +1,20 @@
-using Bounan.Downloader.Worker;
+namespace Bounan.Downloader.Worker;
 
-var builder = Host.CreateApplicationBuilder(args);
-Bootstrap.RegisterServices(builder.Services, builder.Configuration);
+internal static class Program
+{
+    public static void Main(string[] args)
+    {
+        var builder = Host.CreateApplicationBuilder(args);
+        Bootstrap.RegisterServices(builder.Services, builder.Configuration);
 
 #if DEBUG && false
-AWSConfigs.LoggingConfig.LogTo = LoggingOptions.Console;
-AWSConfigs.LoggingConfig.LogResponses = ResponseLoggingOption.Always;
-AWSConfigs.LoggingConfig.LogMetrics = true;
-AWSConfigs.LoggingConfig.LogMetricsFormat = LogMetricsFormatOption.JSON;
+        AWSConfigs.LoggingConfig.LogTo = LoggingOptions.Console;
+        AWSConfigs.LoggingConfig.LogResponses = ResponseLoggingOption.Always;
+        AWSConfigs.LoggingConfig.LogMetrics = true;
+        AWSConfigs.LoggingConfig.LogMetricsFormat = LogMetricsFormatOption.JSON;
 #endif
 
-var host = builder.Build();
-host.Run();
+        var host = builder.Build();
+        host.Run();
+    }
+}
