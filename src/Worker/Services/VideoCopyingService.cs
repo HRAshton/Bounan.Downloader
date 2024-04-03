@@ -1,4 +1,5 @@
 ﻿using System.Diagnostics.CodeAnalysis;
+using System.Text;
 using Bounan.Common.Models;
 using Bounan.Downloader.Worker.Configuration;
 using Bounan.Downloader.Worker.Helpers;
@@ -161,7 +162,7 @@ public partial class VideoCopyingService : IVideoCopyingService
 		var message = await TelegramClient.SendVideoAsync(
 			_telegramConfig.DestinationChatId,
 			new InputFileStream(fileStream),
-			caption: JsonConvert.SerializeObject(videoMetadata),
+			caption: EncodeMetadata(videoMetadata),
 			width: videoInfo.Width,
 			height: videoInfo.Height,
 			duration: videoInfo.DurationSec,
@@ -192,5 +193,10 @@ public partial class VideoCopyingService : IVideoCopyingService
 		var dwnResult = new DwnResultNotification(videoKey.MyAnimeListId, videoKey.Dub, videoKey.Episode, fileId);
 		await AniManClient.SendResult(dwnResult, cancellationToken);
 		Log.ResultSent(Logger, dwnResult);
+	}
+
+	private static string EncodeMetadata(VideoMetadata metadata)
+	{
+		return Convert.ToBase64String(Encoding.UTF8.GetBytes(JsonConvert.SerializeObject(metadata)));
 	}
 }
