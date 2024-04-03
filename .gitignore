@@ -6,3 +6,5 @@ obj/
 riderModule.iml
 /_ReSharper.Caches/
 *.user
+
+cdk.out/
