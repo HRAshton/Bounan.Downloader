@@ -16,8 +16,6 @@
     <OutputType>Exe</OutputType>
   </PropertyGroup>
 
-  <Import Project="..\src\Common\StyleCop.props"/>
-
   <ItemGroup>
     <PackageReference Include="Amazon.CDK.Lib" Version="2.133.0"/>
     <PackageReference Include="Constructs" Version="10.3.0"/>
