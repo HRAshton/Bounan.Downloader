@@ -10,13 +10,14 @@
         "AWS_ACCESS_KEY_ID": "",
         "AWS_SECRET_ACCESS_KEY": "",
         "LoanApi__Token": "",
-        "Logging__AwsLogger__LogGroup": "",
+        "Logging__LogGroup": "",
         "Telegram__ApiUrl": "",
         "Telegram__BotToken": "",
         "Telegram__DestinationChatId": "",
         "AniMan__GetVideoToDownloadLambdaFunctionName": "",
         "AniMan__UpdateVideoStatusLambdaFunctionName": "",
-        "AniMan__NotificationQueueUrl": ""
+        "AniMan__NotificationQueueUrl": "",
+        "DUMMY": ""
       }
     }
   }
