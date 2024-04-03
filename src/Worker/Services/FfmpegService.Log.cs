@@ -16,7 +16,7 @@ public partial class FfmpegService
 		[LoggerMessage(LogLevel.Debug, "Ffmpeg process exited with code {ExitCode}")]
 		public static partial void FfmpegProcessExited(ILogger logger, int exitCode);
 
-		[LoggerMessage(LogLevel.Debug, "Ffmpeg process exited with output: {StderrOutput}")]
+		[LoggerMessage(LogLevel.Debug, "stderr: {StderrOutput}")]
 		public static partial void FfmpegStderrOutput(ILogger logger, string? stderrOutput);
 	}
 }
