@@ -2,7 +2,7 @@
   worker:
     build:
       context: .
-      dockerfile: Worker/Dockerfile
+      dockerfile: src/Worker/Dockerfile
     deploy:
       restart_policy:
         max_attempts: 3
