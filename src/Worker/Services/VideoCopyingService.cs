@@ -116,7 +116,12 @@ public partial class VideoCopyingService : IVideoCopyingService
 			await LoanApiInfoClient.GetPlaylistsAndThumbnailUrlsAsync(signedUri, cancellationToken);
 		Log.GotPlaylistsAndThumbnail(Logger, playlists, thumb);
 
-		var bestQualityPlaylist = playlists.Last().Value;
+		var bestQualityPlaylist = playlists
+			.OrderBy(pair => pair.Key.Length)
+			.ThenBy(pair => pair.Key)
+			// .Reverse() // Gets the lowest quality for debugging purposes
+			.Last()
+			.Value;
 		Log.ProcessingPlaylist(Logger, bestQualityPlaylist);
 
 		var videoParts = await GetVideoPartsAsync(bestQualityPlaylist, cancellationToken);
