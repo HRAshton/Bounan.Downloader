@@ -20,6 +20,7 @@
       - AniMan__GetVideoToDownloadLambdaFunctionName=${AniMan__GetVideoToDownloadLambdaFunctionName}
       - AniMan__UpdateVideoStatusLambdaFunctionName=${AniMan__UpdateVideoStatusLambdaFunctionName}
       - AniMan__NotificationQueueUrl=${AniMan__NotificationQueueUrl}
+      - Processing__Threads=${Processing__Threads}
     links:
       - telegram-bot-api-server
   
