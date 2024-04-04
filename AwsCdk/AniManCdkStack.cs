@@ -9,6 +9,7 @@ using Amazon.CDK.AWS.SNS.Subscriptions;
 using Amazon.CDK.AWS.SQS;
 using Constructs;
 using Microsoft.Extensions.Configuration;
+using Newtonsoft.Json;
 using AlarmActions = Amazon.CDK.AWS.CloudWatch.Actions;
 using LogGroupProps = Amazon.CDK.AWS.Logs.LogGroupProps;
 
@@ -37,6 +38,7 @@ public class AniManCdkStack : Stack
 
         var accessKey = new CfnAccessKey(this, "AccessKey", new CfnAccessKeyProps { UserName = user.UserName });
 
+        Out("Bounan.Downloader.Config", JsonConvert.SerializeObject(config));
         Out("Bounan.Downloader.LogGroupName", logGroup.LogGroupName);
         Out("Bounan.Downloader.UserAccessKeyId", accessKey.Ref);
         Out("Bounan.Downloader.UserSecretAccessKey", accessKey.AttrSecretAccessKey);
