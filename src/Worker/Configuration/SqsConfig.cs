@@ -12,5 +12,5 @@ public record SqsConfig
 	/// <summary>
 	/// Number of seconds to wait before retrying after an error.
 	/// </summary>
-	public int ErrorRetryIntervalSeconds { get; init; } = 5;
+    public int ErrorRetryIntervalSeconds { get; init; } = 5;
 }

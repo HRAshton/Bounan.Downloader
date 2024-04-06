@@ -2,5 +2,5 @@
 
 public interface ISqsClient
 {
-	Task WaitForMessageAsync(CancellationToken cancellationToken);
+    Task WaitForMessageAsync(CancellationToken cancellationToken);
 }

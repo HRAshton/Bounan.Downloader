@@ -4,5 +4,5 @@ namespace Bounan.Downloader.Worker.Interfaces;
 
 public interface IVideoCopyingService
 {
-	public Task ProcessVideo(IVideoKey videoKey, CancellationToken cancellationToken);
+    public Task ProcessVideo(IVideoKey videoKey, CancellationToken cancellationToken);
 }

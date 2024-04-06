@@ -4,32 +4,32 @@ namespace Bounan.Downloader.Worker.Extensions;
 
 public static class PipeExtensions
 {
-	public static async Task PumpToAsync(
-		this PipeReader pipeReader,
-		Stream outputStream,
-		CancellationToken cancellationToken)
-	{
-		ArgumentNullException.ThrowIfNull(pipeReader, nameof(pipeReader));
-		ArgumentNullException.ThrowIfNull(outputStream, nameof(outputStream));
-		
-		while (true)
-		{
-			var result = await pipeReader.ReadAsync(cancellationToken);
-			var buffer = result.Buffer;
+    public static async Task PumpToAsync(
+        this PipeReader pipeReader,
+        Stream outputStream,
+        CancellationToken cancellationToken)
+    {
+        ArgumentNullException.ThrowIfNull(pipeReader, nameof(pipeReader));
+        ArgumentNullException.ThrowIfNull(outputStream, nameof(outputStream));
 
-			foreach (var segment in buffer)
-			{
-				await outputStream.WriteAsync(segment, cancellationToken);
-			}
+        while (true)
+        {
+            var result = await pipeReader.ReadAsync(cancellationToken);
+            var buffer = result.Buffer;
 
-			pipeReader.AdvanceTo(buffer.End);
+            foreach (var segment in buffer)
+            {
+                await outputStream.WriteAsync(segment, cancellationToken);
+            }
 
-			if (result.IsCompleted)
-			{
-				break;
-			}
-		}
+            pipeReader.AdvanceTo(buffer.End);
 
-		outputStream.Close();
-	}
+            if (result.IsCompleted)
+            {
+                break;
+            }
+        }
+
+        outputStream.Close();
+    }
 }
