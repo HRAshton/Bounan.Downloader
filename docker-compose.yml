@@ -22,6 +22,7 @@
       - AniMan__NotificationQueueUrl=${AniMan__NotificationQueueUrl}
       - Processing__Threads=${Processing__Threads}
       - Thumbnail__BotId=${Thumbnail__BotId}
+      - VideoService__TimeoutSeconds=${VideoService__TimeoutSeconds}
     links:
       - telegram-bot-api-server
   
