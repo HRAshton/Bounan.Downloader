@@ -3,7 +3,7 @@ using Bounan.Downloader.Worker.Models;
 
 namespace Bounan.Downloader.Worker.Services;
 
-public partial class VideoCopyingService
+internal partial class VideoCopyingService
 {
     private static partial class Log
     {

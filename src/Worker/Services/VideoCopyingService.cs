@@ -14,7 +14,7 @@ using File = System.IO.File;
 
 namespace Bounan.Downloader.Worker.Services;
 
-public partial class VideoCopyingService : IVideoCopyingService
+internal partial class VideoCopyingService : IVideoCopyingService
 {
     private readonly TelegramConfig _telegramConfig;
     private readonly VideoServiceConfig _videoServiceConfig;
@@ -25,20 +25,20 @@ public partial class VideoCopyingService : IVideoCopyingService
         IOptions<TelegramConfig> telegramConfig,
         ILoanApiComClient loanApiComClient,
         ILoanApiInfoClient loanApiInfoClient,
-        HttpClient httpClient,
         IFfmpegFactory ffmpegFactory,
         ITelegramBotClient telegramClient,
         IAniManClient aniManClient,
-        IVideoMergingService videoMergingService)
+        IVideoMergingService videoMergingService,
+        IThumbnailService thumbnailService)
     {
         Logger = logger;
         LoanApiComClient = loanApiComClient;
         LoanApiInfoClient = loanApiInfoClient;
-        HttpClient = httpClient;
         FfmpegFactory = ffmpegFactory;
         TelegramClient = telegramClient;
         AniManClient = aniManClient;
         VideoMergingService = videoMergingService;
+        ThumbnailService = thumbnailService;
 
         ArgumentNullException.ThrowIfNull(telegramConfig, nameof(telegramConfig));
         ArgumentNullException.ThrowIfNull(videoServiceConfig, nameof(videoServiceConfig));
@@ -50,8 +50,6 @@ public partial class VideoCopyingService : IVideoCopyingService
 
     private IAniManClient AniManClient { get; }
 
-    private HttpClient HttpClient { get; }
-
     private ILoanApiComClient LoanApiComClient { get; }
 
     private ILoanApiInfoClient LoanApiInfoClient { get; }
@@ -59,6 +57,8 @@ public partial class VideoCopyingService : IVideoCopyingService
     private IFfmpegFactory FfmpegFactory { get; }
 
     private IVideoMergingService VideoMergingService { get; }
+
+    private IThumbnailService ThumbnailService { get; }
 
     private ITelegramBotClient TelegramClient { get; }
 
@@ -76,12 +76,17 @@ public partial class VideoCopyingService : IVideoCopyingService
             Log.ProcessingVideo(Logger, signedUri);
 
             using var ffmpegService = FfmpegFactory.CreateFfmpegService(innerCts.Token);
-            var (videoInfo, thumbnail) = await DownloadAndMergeVideoAsync(signedUri, ffmpegService, innerCts.Token);
+            var (videoInfo, origThumbnail) = await DownloadAndMergeVideoAsync(signedUri, ffmpegService, innerCts.Token);
             Log.GotVideoInfo(Logger, videoInfo);
 
             var videoMetadata = new VideoMetadata(videoKey, signedUri.ToString());
 
-            var fileId = await UploadVideoAsync(videoInfo, thumbnail, videoMetadata, innerCts.Token);
+            await using var thumbnailStream = await ThumbnailService.GetThumbnailPngStreamAsync(
+                origThumbnail,
+                videoKey,
+                innerCts.Token);
+            
+            var fileId = await UploadVideoAsync(videoInfo, thumbnailStream, videoMetadata, innerCts.Token);
             Log.VideoUploaded(Logger, fileId);
 
             await SendResult(videoKey, fileId, innerCts.Token);
@@ -120,12 +125,11 @@ public partial class VideoCopyingService : IVideoCopyingService
 
     private async Task<string> UploadVideoAsync(
         VideoInfo videoInfo,
-        Uri thumbnailUri,
+        Stream thumbnailStream,
         VideoMetadata videoMetadata,
         CancellationToken cancellationToken)
     {
         await using var fileStream = File.OpenRead(videoInfo.FilePath);
-        await using var thumbStream = await HttpClient.GetStreamAsync(thumbnailUri, cancellationToken);
 
         var message = await TelegramClient.SendVideoAsync(
             _telegramConfig.DestinationChatId,
@@ -134,7 +138,7 @@ public partial class VideoCopyingService : IVideoCopyingService
             width: videoInfo.Width,
             height: videoInfo.Height,
             duration: videoInfo.DurationSec,
-            thumbnail: new InputFileStream(thumbStream),
+            thumbnail: new InputFileStream(thumbnailStream),
             supportsStreaming: true,
             cancellationToken: cancellationToken);
         Log.VideoUploaded(Logger);

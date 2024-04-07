@@ -11,7 +11,7 @@ using Microsoft.Extensions.Options;
 
 namespace Bounan.Downloader.Worker.Services;
 
-public partial class FfmpegService : IFfmpegService
+internal partial class FfmpegService : IFfmpegService
 {
     private readonly Regex _resolutionRegex = ResolutionRegex();
     private readonly Regex _durationRegex = DurationRegex();

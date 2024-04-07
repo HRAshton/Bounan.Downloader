@@ -1,6 +1,6 @@
 ﻿namespace Bounan.Downloader.Worker.Services;
 
-public partial class FfmpegService
+internal partial class FfmpegService
 {
     private static partial class Log
     {

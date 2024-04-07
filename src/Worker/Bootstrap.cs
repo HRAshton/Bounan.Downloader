@@ -23,6 +23,7 @@ public static class Bootstrap
         services.Configure<VideoServiceConfig>(configuration.GetSection(VideoServiceConfig.SectionName));
         services.Configure<TelegramConfig>(configuration.GetSection(TelegramConfig.SectionName));
         services.Configure<ProcessingConfig>(configuration.GetSection(ProcessingConfig.SectionName));
+        services.Configure<ThumbnailConfig>(configuration.GetSection(ThumbnailConfig.SectionName));
 
         services.AddLogging(logging =>
         {
@@ -46,6 +47,7 @@ public static class Bootstrap
         services.AddSingleton<IVideoCopyingService, VideoCopyingService>();
         services.AddSingleton<IVideoMergingService, VideoMergingService>();
         services.AddSingleton<IFfmpegFactory, FfmpegFactory>();
+        services.AddSingleton<IThumbnailService, ThumbnailService>();
 
         services.AddTransient<IFfmpegService, FfmpegService>();
 
