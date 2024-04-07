@@ -135,9 +135,9 @@ internal partial class ThumbnailService : IThumbnailService
     private static void DrawAnimeName(string animeName, IImageProcessingContext ctx)
     {
         ctx
-            .FillPolygon(Rgba32.ParseHex("#FF6666E6"), Geometry.AnimeName.SmallLeft.Polygon)
-            .FillPolygon(Rgba32.ParseHex("#FF6666B3"), Geometry.AnimeName.MediumLeft.Polygon)
-            .FillPolygon(Rgba32.ParseHex("#FF6666E6"), Geometry.AnimeName.Large.Polygon)
+            .FillPolygon(Rgba32.ParseHex("#FF6666B3"), Geometry.AnimeName.SmallLeft.Polygon)
+            .FillPolygon(Rgba32.ParseHex("#FF6666E6"), Geometry.AnimeName.MediumLeft.Polygon)
+            .FillPolygon(Rgba32.ParseHex("#FF6666F2"), Geometry.AnimeName.Large.Polygon)
             .FillPolygon(Rgba32.ParseHex("#FF6666E6"), Geometry.AnimeName.MediumRight.Polygon)
             .FillPolygon(Rgba32.ParseHex("#FF6666B3"), Geometry.AnimeName.SmallRight.Polygon)
             .ApplyScalingWaterMarkWordWrap(
