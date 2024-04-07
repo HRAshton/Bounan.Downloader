@@ -18,4 +18,10 @@ public record VideoServiceConfig
     /// Number of seconds to wait for a video to be processed before it is considered failed.
     /// </summary>
     public int TimeoutSeconds { get; init; } = 300;
+
+    /// <summary>
+    /// A flag indicating whether to use the lowest quality available.
+    /// For debugging purposes only.
+    /// </summary>
+    public bool UseLowestQuality { get; init; }
 }

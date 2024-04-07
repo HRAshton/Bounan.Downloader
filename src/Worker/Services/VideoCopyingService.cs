@@ -2,10 +2,11 @@
 using System.Text;
 using Bounan.Common.Models;
 using Bounan.Downloader.Worker.Configuration;
-using Bounan.Downloader.Worker.Helpers;
 using Bounan.Downloader.Worker.Interfaces;
 using Bounan.Downloader.Worker.Models;
+using Bounan.LoanApi.Extensions;
 using Bounan.LoanApi.Interfaces;
+using JetBrains.Annotations;
 using Microsoft.Extensions.Options;
 using Newtonsoft.Json;
 using Telegram.Bot;
@@ -29,7 +30,8 @@ public partial class VideoCopyingService : IVideoCopyingService
         HttpClient httpClient,
         IFfmpegFactory ffmpegFactory,
         ITelegramBotClient telegramClient,
-        IAniManClient aniManClient)
+        IAniManClient aniManClient,
+        IVideoMergingService videoMergingService)
     {
         Logger = logger;
         LinkValidator = linkValidator;
@@ -39,6 +41,7 @@ public partial class VideoCopyingService : IVideoCopyingService
         FfmpegFactory = ffmpegFactory;
         TelegramClient = telegramClient;
         AniManClient = aniManClient;
+        VideoMergingService = videoMergingService;
 
         ArgumentNullException.ThrowIfNull(telegramConfig, nameof(telegramConfig));
         ArgumentNullException.ThrowIfNull(videoServiceConfig, nameof(videoServiceConfig));
@@ -60,6 +63,8 @@ public partial class VideoCopyingService : IVideoCopyingService
 
     private IFfmpegFactory FfmpegFactory { get; }
 
+    private IVideoMergingService VideoMergingService { get; }
+
     private ITelegramBotClient TelegramClient { get; }
 
     [SuppressMessage("Design", "CA1031:Do not catch general exception types")]
@@ -72,7 +77,7 @@ public partial class VideoCopyingService : IVideoCopyingService
         ArgumentNullException.ThrowIfNull(videoKey);
         try
         {
-            var signedUri = await FindSignedLink(videoKey);
+            var signedUri = await LoanApiComClient.FindRequiredSignedLinkAsync(videoKey, LinkValidator, innerCts.Token);
             Log.ProcessingVideo(Logger, signedUri);
 
             using var ffmpegService = FfmpegFactory.CreateFfmpegService(innerCts.Token);
@@ -84,28 +89,13 @@ public partial class VideoCopyingService : IVideoCopyingService
             var fileId = await UploadVideoAsync(videoInfo, thumbnail, videoMetadata, innerCts.Token);
             Log.VideoUploaded(Logger, fileId);
 
-            await SendResult(videoKey, fileId, cancellationToken);
+            await SendResult(videoKey, fileId, innerCts.Token);
         }
         catch (Exception e)
         {
             Log.ErrorProcessingVideo(Logger, e);
-            await SendResult(videoKey, null, cancellationToken);
+            await SendResult(videoKey, null, innerCts.Token);
         }
-    }
-
-    private async Task<Uri> FindSignedLink(IVideoKey videoKey)
-    {
-        var searchResult = await LoanApiComClient.SearchAsync(videoKey.MyAnimeListId, CancellationToken.None);
-        var bestQualityVideo = searchResult
-            .LastOrDefault(res => res.Dub == videoKey.Dub && res.Episode == videoKey.Episode);
-
-        var signedLink = bestQualityVideo?.SignedLink ?? string.Empty;
-        if (!LinkValidator.IsValidSignedLink(signedLink))
-        {
-            throw new ArgumentException("Invalid signed url");
-        }
-
-        return new Uri(signedLink);
     }
 
     private async Task<(VideoInfo VideoInfo, Uri Thumbnail)> DownloadAndMergeVideoAsync(
@@ -117,32 +107,15 @@ public partial class VideoCopyingService : IVideoCopyingService
             await LoanApiInfoClient.GetPlaylistsAndThumbnailUrlsAsync(signedUri, cancellationToken);
         Log.GotPlaylistsAndThumbnail(Logger, playlists, thumb);
 
-        var bestQualityPlaylist = playlists
+        var sortedPlaylists = playlists
             .OrderBy(pair => pair.Key.Length)
-            .ThenBy(pair => pair.Key)
-            // .Reverse() // Gets the lowest quality for debugging purposes
-            .Last()
-            .Value;
+            .ThenBy(pair => pair.Key);
+        var bestQualityPlaylist = _videoServiceConfig.UseLowestQuality
+            ? sortedPlaylists.First().Value
+            : sortedPlaylists.Last().Value;
         Log.ProcessingPlaylist(Logger, bestQualityPlaylist);
 
-        var videoParts = await GetVideoPartsAsync(bestQualityPlaylist, cancellationToken);
-        Log.GotVideoParts(Logger, videoParts);
-
-        await SemiConcurrentProcessingHelper.Process(
-            videoParts,
-            async (uri, i, total, ct) =>
-            {
-                var response = await HttpClient.GetByteArrayAsync(uri, ct);
-                Log.DownloadedPart(Logger, i + 1, total);
-                return response;
-            },
-            async (bytes, i, total, ct) =>
-            {
-                await ffmpegService.PipeWriter.WriteAsync(bytes, ct);
-                Log.ProcessedPart(Logger, i + 1, total);
-            },
-            _videoServiceConfig.ConcurrentDownloads,
-            cancellationToken);
+        await VideoMergingService.DownloadToPipeAsync(bestQualityPlaylist, ffmpegService.PipeWriter, cancellationToken);
 
         await ffmpegService.PipeWriter.CompleteAsync();
         var videoInfo = await ffmpegService.GetResultAsync(cancellationToken);
@@ -175,19 +148,6 @@ public partial class VideoCopyingService : IVideoCopyingService
         return fileId;
     }
 
-    private async Task<IList<Uri>> GetVideoPartsAsync(Uri playlist, CancellationToken cancellationToken)
-    {
-        var response = await HttpClient.GetAsync(playlist, cancellationToken);
-        var content = await response.Content.ReadAsStringAsync(cancellationToken);
-        var videoParts = content
-            .Split('\n')
-            .Where(line => line.StartsWith("./", StringComparison.Ordinal))
-            .Select(relativeFilePath => new Uri(playlist, relativeFilePath))
-            .ToArray();
-
-        return videoParts;
-    }
-
     private async Task SendResult(IVideoKey videoKey, string? fileId, CancellationToken cancellationToken)
     {
         var dwnResult = new DwnResultNotification(videoKey.MyAnimeListId, videoKey.Dub, videoKey.Episode, fileId);
@@ -199,4 +159,6 @@ public partial class VideoCopyingService : IVideoCopyingService
     {
         return Convert.ToBase64String(Encoding.UTF8.GetBytes(JsonConvert.SerializeObject(metadata)));
     }
+
+    private record VideoMetadata([UsedImplicitly] IVideoKey VideoKey, [UsedImplicitly] string SignedLink);
 }

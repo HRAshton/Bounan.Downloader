@@ -44,6 +44,7 @@ public static class Bootstrap
 
         services.AddSingleton<ISqsClient, SqsClient>();
         services.AddSingleton<IVideoCopyingService, VideoCopyingService>();
+        services.AddSingleton<IVideoMergingService, VideoMergingService>();
         services.AddSingleton<IFfmpegFactory, FfmpegFactory>();
 
         services.AddTransient<IFfmpegService, FfmpegService>();
