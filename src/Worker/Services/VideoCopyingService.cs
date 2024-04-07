@@ -4,7 +4,6 @@ using Bounan.Common.Models;
 using Bounan.Downloader.Worker.Configuration;
 using Bounan.Downloader.Worker.Interfaces;
 using Bounan.Downloader.Worker.Models;
-using Bounan.LoanApi.Extensions;
 using Bounan.LoanApi.Interfaces;
 using JetBrains.Annotations;
 using Microsoft.Extensions.Options;
@@ -24,7 +23,6 @@ public partial class VideoCopyingService : IVideoCopyingService
         ILogger<VideoCopyingService> logger,
         IOptions<VideoServiceConfig> videoServiceConfig,
         IOptions<TelegramConfig> telegramConfig,
-        ILinkValidator linkValidator,
         ILoanApiComClient loanApiComClient,
         ILoanApiInfoClient loanApiInfoClient,
         HttpClient httpClient,
@@ -34,7 +32,6 @@ public partial class VideoCopyingService : IVideoCopyingService
         IVideoMergingService videoMergingService)
     {
         Logger = logger;
-        LinkValidator = linkValidator;
         LoanApiComClient = loanApiComClient;
         LoanApiInfoClient = loanApiInfoClient;
         HttpClient = httpClient;
@@ -54,8 +51,6 @@ public partial class VideoCopyingService : IVideoCopyingService
     private IAniManClient AniManClient { get; }
 
     private HttpClient HttpClient { get; }
-
-    private ILinkValidator LinkValidator { get; }
 
     private ILoanApiComClient LoanApiComClient { get; }
 
@@ -77,7 +72,7 @@ public partial class VideoCopyingService : IVideoCopyingService
         ArgumentNullException.ThrowIfNull(videoKey);
         try
         {
-            var signedUri = await LoanApiComClient.FindRequiredSignedLinkAsync(videoKey, LinkValidator, innerCts.Token);
+            var signedUri = await LoanApiComClient.GetRequiredSignedLinkAsync(videoKey, innerCts.Token);
             Log.ProcessingVideo(Logger, signedUri);
 
             using var ffmpegService = FfmpegFactory.CreateFfmpegService(innerCts.Token);
