@@ -7,7 +7,7 @@ RUN mkdir /tmp/bounan-downloader \
     && chown -R $APP_UID /tmp/bounan-downloader
 
 RUN apt-get update \
-    && apt-get install -y ffmpeg \
+    && apt-get install -y ffmpeg fonts-roboto \
     && rm -rf /var/lib/apt/lists/*
 
 USER $APP_UID

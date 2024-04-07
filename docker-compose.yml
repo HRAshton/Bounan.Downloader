@@ -21,6 +21,7 @@
       - AniMan__UpdateVideoStatusLambdaFunctionName=${AniMan__UpdateVideoStatusLambdaFunctionName}
       - AniMan__NotificationQueueUrl=${AniMan__NotificationQueueUrl}
       - Processing__Threads=${Processing__Threads}
+      - Thumbnail__BotId=${Thumbnail__BotId}
     links:
       - telegram-bot-api-server
   
