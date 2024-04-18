@@ -13,4 +13,9 @@ public record SqsConfig
 	/// Number of seconds to wait before retrying after an error.
 	/// </summary>
     public int ErrorRetryIntervalSeconds { get; init; } = 5;
+
+    /// <summary>
+    /// URL of the notification queue.
+    /// </summary>
+    public required Uri NotificationQueueUrl { get; init; }
 }

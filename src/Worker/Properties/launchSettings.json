@@ -17,7 +17,7 @@
         "Telegram__DestinationChatId": "",
         "AniMan__GetVideoToDownloadLambdaFunctionName": "",
         "AniMan__UpdateVideoStatusLambdaFunctionName": "",
-        "AniMan__NotificationQueueUrl": "",
+        "Sqs__NotificationQueueUrl": "",
         "Thumbnail__BotId": "",
         "DUMMY": ""
       }

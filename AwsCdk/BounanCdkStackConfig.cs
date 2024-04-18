@@ -12,7 +12,7 @@ public class BounanCdkStackConfig
 
 	public required string UpdateVideoStatusLambdaFunctionName { get; init; }
 
-	public required string NotificationQueueArn { get; init; }
+	public required string NewEpisodeSnsTopicArn { get; init; }
 
 	public void Validate()
 	{
@@ -20,6 +20,6 @@ public class BounanCdkStackConfig
 		ArgumentException.ThrowIfNullOrWhiteSpace(LoanApiToken);
 		ArgumentException.ThrowIfNullOrWhiteSpace(GetVideoToDownloadLambdaFunctionName);
 		ArgumentException.ThrowIfNullOrWhiteSpace(UpdateVideoStatusLambdaFunctionName);
-		ArgumentException.ThrowIfNullOrWhiteSpace(NotificationQueueArn);
+		ArgumentException.ThrowIfNullOrWhiteSpace(NewEpisodeSnsTopicArn);
 	}
 }

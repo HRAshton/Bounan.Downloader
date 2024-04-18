@@ -1,4 +1,5 @@
 using System;
+using System.Diagnostics.CodeAnalysis;
 using Amazon.CDK;
 using Amazon.CDK.AWS.CloudWatch;
 using Amazon.CDK.AWS.IAM;
@@ -15,6 +16,7 @@ using LogGroupProps = Amazon.CDK.AWS.Logs.LogGroupProps;
 
 namespace Bounan.Downloader.AwsCdk;
 
+[SuppressMessage("Performance", "CA1859:Use concrete types when possible for improved performance")]
 public class AniManCdkStack : Stack
 {
     internal AniManCdkStack(Construct scope, string id, IStackProps? props = null) : base(scope, id, props)
@@ -29,7 +31,7 @@ public class AniManCdkStack : Stack
 
         var user = new User(this, "User");
 
-        GrantPermissionsForQueue(config, user);
+        var newEpisodesQueue = CreateNewEpisodesQueue(config, user);
         GrantPermissionsForLambdas(config, user);
 
         var logGroup = CreateLogGroup();
@@ -42,19 +44,26 @@ public class AniManCdkStack : Stack
         Out("Bounan.Downloader.LogGroupName", logGroup.LogGroupName);
         Out("Bounan.Downloader.UserAccessKeyId", accessKey.Ref);
         Out("Bounan.Downloader.UserSecretAccessKey", accessKey.AttrSecretAccessKey);
+        Out("Bounan.Downloader.NewEpisodesQueueUrl", newEpisodesQueue.QueueUrl);
     }
 
-    private void GrantPermissionsForQueue(BounanCdkStackConfig config, User user)
+    private IQueue CreateNewEpisodesQueue(BounanCdkStackConfig config, IGrantable user)
     {
-        var dwnNotificationsQueue = Queue.FromQueueArn(
-            this,
-            "DwnNotificationsSqsQueue",
-            config.NotificationQueueArn);
-        dwnNotificationsQueue.GrantConsumeMessages(user);
-        dwnNotificationsQueue.GrantSendMessages(user);
+        var newEpisodesQueue = new Queue(this, "NewEpisodesQueue", new QueueProps
+        {
+            VisibilityTimeout = Duration.Seconds(300),
+            RetentionPeriod = Duration.Minutes(1),
+        });
+
+        newEpisodesQueue.GrantConsumeMessages(user);
+
+        var newEpisodesTopic = Topic.FromTopicArn(this, "NewEpisodesTopic", config.NewEpisodeSnsTopicArn);
+        newEpisodesTopic.AddSubscription(new SqsSubscription(newEpisodesQueue));
+
+        return newEpisodesQueue;
     }
 
-    private void GrantPermissionsForLambdas(BounanCdkStackConfig config, User user)
+    private void GrantPermissionsForLambdas(BounanCdkStackConfig config, IGrantable user)
     {
         var getAnimeToDownloadLambda = Function.FromFunctionName(
             this,
@@ -69,7 +78,7 @@ public class AniManCdkStack : Stack
         updateVideoStatusLambda.GrantInvoke(user);
     }
 
-    private LogGroup CreateLogGroup()
+    private ILogGroup CreateLogGroup()
     {
         return new LogGroup(this, "LogGroup", new LogGroupProps
         {

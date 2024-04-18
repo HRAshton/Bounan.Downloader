@@ -19,7 +19,7 @@
       - Telegram__DestinationChatId=${Telegram__DestinationChatId}
       - AniMan__GetVideoToDownloadLambdaFunctionName=${AniMan__GetVideoToDownloadLambdaFunctionName}
       - AniMan__UpdateVideoStatusLambdaFunctionName=${AniMan__UpdateVideoStatusLambdaFunctionName}
-      - AniMan__NotificationQueueUrl=${AniMan__NotificationQueueUrl}
+      - Sqs__NotificationQueueUrl=${Sqs__NotificationQueueUrl}
       - Processing__Threads=${Processing__Threads}
       - Thumbnail__BotId=${Thumbnail__BotId}
       - VideoService__TimeoutSeconds=${VideoService__TimeoutSeconds}

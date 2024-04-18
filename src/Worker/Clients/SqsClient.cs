@@ -16,12 +16,10 @@ public partial class SqsClient : ISqsClient, IDisposable
 
     public SqsClient(
         ILogger<SqsClient> logger,
-        IOptions<AniManConfig> aniMenConfig,
         IOptions<SqsConfig> sqsConfig,
         IOptions<ProcessingConfig> processingConfig,
         IAmazonSQS amazonSqs)
     {
-        ArgumentNullException.ThrowIfNull(aniMenConfig);
         ArgumentNullException.ThrowIfNull(sqsConfig);
         ArgumentNullException.ThrowIfNull(processingConfig);
 
@@ -31,7 +29,7 @@ public partial class SqsClient : ISqsClient, IDisposable
         _errorRetryIntervalMs = sqsConfig.Value.ErrorRetryIntervalSeconds * 1000;
         _receiveMessageRequest = new ReceiveMessageRequest
         {
-            QueueUrl = aniMenConfig.Value.NotificationQueueUrl.ToString(),
+            QueueUrl = sqsConfig.Value.NotificationQueueUrl.ToString(),
             MaxNumberOfMessages = 1,
             WaitTimeSeconds = sqsConfig.Value.PollingIntervalSeconds
         };
