@@ -77,7 +77,7 @@ public static class SemiConcurrentProcessingHelper
         Func<TFirstCallbackResult, int, int, CancellationToken, Task> ordinalCallback,
         SemaphoreSlim ordinalSemaphore,
         IList<Status> statuses,
-        IReadOnlyList<TFirstCallbackResult?> results,
+        IList<TFirstCallbackResult?> results,
         CancellationToken cancellationToken)
     {
         await ordinalSemaphore.WaitAsync(cancellationToken);
@@ -96,6 +96,7 @@ public static class SemiConcurrentProcessingHelper
                         // As we are processing in order, we can safely assume that the previous items are processed.
                         await ordinalCallback(results[i]!, i, statuses.Count, cancellationToken);
                         statuses[i] = Status.ProcessedBySecond;
+                        results[i] = default;
                         continue;
                     default:
                         throw new ArgumentOutOfRangeException(nameof(statuses));
