@@ -28,7 +28,7 @@ public class ThumbnailServiceTests
 
         // Act
         async Task Act() =>
-            await thumbnailService.GetThumbnailPngStreamAsync(null!, Mock.Of<IVideoKey>(), CancellationToken.None);
+            await thumbnailService.GetThumbnailJpegStreamAsync(null!, Mock.Of<IVideoKey>(), CancellationToken.None);
 
         // Assert
         Assert.ThrowsAsync<ArgumentNullException>(Act, "Value cannot be null. (Parameter 'originalThumbnailUrl')");
@@ -46,7 +46,7 @@ public class ThumbnailServiceTests
 
         // Act
         async Task Act() =>
-            await thumbnailService.GetThumbnailPngStreamAsync(
+            await thumbnailService.GetThumbnailJpegStreamAsync(
                 new Uri("https://example.com"),
                 null!,
                 CancellationToken.None);
@@ -93,7 +93,7 @@ public class ThumbnailServiceTests
             Mock.Of<ILoanApiComClient>());
 
         // Act
-        await using var stream = await thumbnailService.GetThumbnailPngStreamAsync(
+        await using var stream = await thumbnailService.GetThumbnailJpegStreamAsync(
             new Uri("https://example.com"),
             Mock.Of<IVideoKey>(),
             CancellationToken.None);
@@ -154,7 +154,7 @@ public class ThumbnailServiceTests
             loanApiComClientMock.Object);
 
         // Act
-        await using var stream = await thumbnailService.GetThumbnailPngStreamAsync(
+        await using var stream = await thumbnailService.GetThumbnailJpegStreamAsync(
             new Uri("https://example.com"),
             new VideoKey(0, "GetThumbnailPngStreamAsync", 100000),
             CancellationToken.None);

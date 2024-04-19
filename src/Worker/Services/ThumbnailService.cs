@@ -39,7 +39,7 @@ internal partial class ThumbnailService : IThumbnailService
     private ILoanApiComClient LoanApiComClient { get; }
 
     [SuppressMessage("ReSharper", "AccessToDisposedClosure", Justification = "Reviewed")]
-    public async Task<Stream> GetThumbnailPngStreamAsync(
+    public async Task<Stream> GetThumbnailJpegStreamAsync(
         Uri originalThumbnailUrl,
         IVideoKey videoKey,
         CancellationToken cancellationToken)

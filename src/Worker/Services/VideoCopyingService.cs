@@ -81,7 +81,7 @@ internal partial class VideoCopyingService : IVideoCopyingService
 
             var videoMetadata = new VideoMetadata(videoKey, signedUri.ToString());
 
-            await using var thumbnailStream = await ThumbnailService.GetThumbnailPngStreamAsync(
+            await using var thumbnailStream = await ThumbnailService.GetThumbnailJpegStreamAsync(
                 origThumbnail,
                 videoKey,
                 innerCts.Token);
