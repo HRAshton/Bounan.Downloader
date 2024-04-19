@@ -85,11 +85,11 @@ internal partial class VideoCopyingService : IVideoCopyingService
                 origThumbnail,
                 videoKey,
                 innerCts.Token);
-            
-            var fileId = await UploadVideoAsync(videoInfo, thumbnailStream, videoMetadata, innerCts.Token);
-            Log.VideoUploaded(Logger, fileId);
 
-            await SendResult(videoKey, fileId, innerCts.Token);
+            var messageId = await UploadVideoAsync(videoInfo, thumbnailStream, videoMetadata, innerCts.Token);
+            Log.VideoUploaded(Logger, messageId);
+
+            await SendResult(videoKey, messageId, innerCts.Token);
         }
         catch (Exception e)
         {
@@ -131,10 +131,11 @@ internal partial class VideoCopyingService : IVideoCopyingService
     {
         await using var fileStream = File.OpenRead(videoInfo.FilePath);
 
-        var message = await TelegramClient.SendVideoAsync(
+        var messageId = CreateMessageId(videoMetadata);
+        await TelegramClient.SendVideoAsync(
             _telegramConfig.DestinationChatId,
             new InputFileStream(fileStream),
-            caption: EncodeMetadata(videoMetadata),
+            caption: messageId,
             width: videoInfo.Width,
             height: videoInfo.Height,
             duration: videoInfo.DurationSec,
@@ -143,18 +144,17 @@ internal partial class VideoCopyingService : IVideoCopyingService
             cancellationToken: cancellationToken);
         Log.VideoUploaded(Logger);
 
-        var fileId = message.Video!.FileId;
-        return fileId;
+        return messageId;
     }
 
-    private async Task SendResult(IVideoKey videoKey, string? fileId, CancellationToken cancellationToken)
+    private async Task SendResult(IVideoKey videoKey, string? messageId, CancellationToken cancellationToken)
     {
-        var dwnResult = new DwnResultNotification(videoKey.MyAnimeListId, videoKey.Dub, videoKey.Episode, fileId);
+        var dwnResult = new DwnResultNotification(videoKey.MyAnimeListId, videoKey.Dub, videoKey.Episode, messageId);
         await AniManClient.SendResult(dwnResult, cancellationToken);
         Log.ResultSent(Logger, dwnResult);
     }
 
-    private static string EncodeMetadata(VideoMetadata metadata)
+    private static string CreateMessageId(VideoMetadata metadata)
     {
         return Convert.ToBase64String(Encoding.UTF8.GetBytes(JsonConvert.SerializeObject(metadata)));
     }
