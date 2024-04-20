@@ -16,8 +16,8 @@ internal partial class VideoCopyingService
         [LoggerMessage(LogLevel.Debug, "Got video info: {VideoInfo}")]
         public static partial void GotVideoInfo(ILogger logger, VideoInfo videoInfo);
 
-        [LoggerMessage(LogLevel.Information, "Video uploaded with file id: {FileId}")]
-        public static partial void VideoUploaded(ILogger logger, string fileId);
+        [LoggerMessage(LogLevel.Information, "Video uploaded with messageId: {MessageId}")]
+        public static partial void VideoUploaded(ILogger logger, int messageId);
 
         [LoggerMessage(LogLevel.Debug, "Got playlists and thumbnail: {Playlists}; {Thumbnail}")]
         public static partial void GotPlaylistsAndThumbnail(
