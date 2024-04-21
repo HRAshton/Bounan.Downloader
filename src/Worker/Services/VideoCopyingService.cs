@@ -123,7 +123,7 @@ internal partial class VideoCopyingService : IVideoCopyingService
         return (videoInfo, thumb);
     }
 
-    private async Task<int> UploadVideoAsync(
+    private async Task<string> UploadVideoAsync(
         VideoInfo videoInfo,
         Stream thumbnailStream,
         VideoMetadata videoMetadata,
@@ -131,10 +131,11 @@ internal partial class VideoCopyingService : IVideoCopyingService
     {
         await using var fileStream = File.OpenRead(videoInfo.FilePath);
 
-        var msg = await TelegramClient.SendVideoAsync(
+        var messageId = CreateMessageId(videoMetadata);
+        await TelegramClient.SendVideoAsync(
             _telegramConfig.DestinationChatId,
             new InputFileStream(fileStream),
-            caption: CreateMetadata(videoMetadata),
+            caption: messageId,
             width: videoInfo.Width,
             height: videoInfo.Height,
             duration: videoInfo.DurationSec,
@@ -143,17 +144,17 @@ internal partial class VideoCopyingService : IVideoCopyingService
             cancellationToken: cancellationToken);
         Log.VideoUploaded(Logger);
 
-        return msg.MessageId;
+        return messageId;
     }
 
-    private async Task SendResult(IVideoKey videoKey, int? messageId, CancellationToken cancellationToken)
+    private async Task SendResult(IVideoKey videoKey, string? messageId, CancellationToken cancellationToken)
     {
         var dwnResult = new DwnResultNotification(videoKey.MyAnimeListId, videoKey.Dub, videoKey.Episode, messageId);
         await AniManClient.SendResult(dwnResult, cancellationToken);
         Log.ResultSent(Logger, dwnResult);
     }
 
-    private static string CreateMetadata(VideoMetadata metadata)
+    private static string CreateMessageId(VideoMetadata metadata)
     {
         return Convert.ToBase64String(Encoding.UTF8.GetBytes(JsonConvert.SerializeObject(metadata)));
     }
