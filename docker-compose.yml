@@ -1,8 +1,6 @@
 ﻿services:
   worker:
-    build:
-      context: .
-      dockerfile: src/Worker/Dockerfile
+    image: ${WORKER_IMAGE_URI}
     deploy:
       restart_policy:
         max_attempts: 3
