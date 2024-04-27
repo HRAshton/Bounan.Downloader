@@ -86,10 +86,10 @@ internal partial class VideoCopyingService : IVideoCopyingService
                 videoKey,
                 innerCts.Token);
             
-            var fileId = await UploadVideoAsync(videoInfo, thumbnailStream, videoMetadata, innerCts.Token);
-            Log.VideoUploaded(Logger, fileId);
+            var messageId = await UploadVideoAsync(videoInfo, thumbnailStream, videoMetadata, innerCts.Token);
+            Log.VideoUploaded(Logger, messageId);
 
-            await SendResult(videoKey, fileId, innerCts.Token);
+            await SendResult(videoKey, messageId, innerCts.Token);
         }
         catch (Exception e)
         {
@@ -123,7 +123,7 @@ internal partial class VideoCopyingService : IVideoCopyingService
         return (videoInfo, thumb);
     }
 
-    private async Task<string> UploadVideoAsync(
+    private async Task<int> UploadVideoAsync(
         VideoInfo videoInfo,
         Stream thumbnailStream,
         VideoMetadata videoMetadata,
@@ -143,13 +143,12 @@ internal partial class VideoCopyingService : IVideoCopyingService
             cancellationToken: cancellationToken);
         Log.VideoUploaded(Logger);
 
-        var fileId = message.Video!.FileId;
-        return fileId;
+        return message.MessageId;
     }
 
-    private async Task SendResult(IVideoKey videoKey, string? fileId, CancellationToken cancellationToken)
+    private async Task SendResult(IVideoKey videoKey, int? messageId, CancellationToken cancellationToken)
     {
-        var dwnResult = new DwnResultNotification(videoKey.MyAnimeListId, videoKey.Dub, videoKey.Episode, fileId);
+        var dwnResult = new DwnResultNotification(videoKey.MyAnimeListId, videoKey.Dub, videoKey.Episode, messageId);
         await AniManClient.SendResult(dwnResult, cancellationToken);
         Log.ResultSent(Logger, dwnResult);
     }
