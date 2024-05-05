@@ -11,44 +11,57 @@ public partial class WorkerService(
     ISqsClient sqsClient,
     IVideoCopyingService videoCopyingService) : BackgroundService
 {
+    private readonly ProcessingConfig _processingConfig = processingConfig.Value;
+
+    private ILogger Logger => logger;
+
+    private IAniManClient AniManClient => aniManClient;
+
+    private ISqsClient SqsClient => sqsClient;
+
+    private IVideoCopyingService VideoCopyingService => videoCopyingService;
+
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
-        using var semaphore = new SemaphoreSlim(processingConfig.Value.Threads, processingConfig.Value.Threads);
+        using var semaphore = new SemaphoreSlim(0, _processingConfig.Threads);
 
-        Log.WorkerRunning(logger, DateTimeOffset.Now);
+        Log.WorkerRunning(Logger, DateTimeOffset.Now);
 
-        var workers = Enumerable.Range(0, processingConfig.Value.Threads)
+        var workers = Enumerable.Range(0, _processingConfig.Threads)
             .Select(i => RunWorkerInstance(semaphore, i, stoppingToken))
+            .Concat([ SqsWatcher(semaphore, stoppingToken) ])
             .ToArray();
 
         await Task.WhenAll(workers);
     }
 
+    private async Task SqsWatcher(SemaphoreSlim semaphore, CancellationToken stoppingToken)
+    {
+        while (!stoppingToken.IsCancellationRequested)
+        {
+            await SqsClient.WaitForMessageAsync(stoppingToken);
+            semaphore.Release(_processingConfig.Threads);
+        }
+    }
+
     private async Task RunWorkerInstance(SemaphoreSlim semaphore, int i, CancellationToken stoppingToken)
     {
-        using var _ = Log.BeginScopeWorkerId(logger, i);
+        using var _ = Log.BeginScopeWorkerId(Logger, i);
 
         while (!stoppingToken.IsCancellationRequested)
         {
-            await semaphore.WaitAsync(stoppingToken);
-            try
+            var message = await AniManClient.GetNextVideo(stoppingToken);
+            if (message?.VideoKey is null)
             {
-                var message = await aniManClient.GetNextVideo(stoppingToken);
-
-                if (message?.VideoKey is null)
-                {
-                    await sqsClient.WaitForMessageAsync(stoppingToken);
-                    continue;
-                }
-
-                ArgumentNullException.ThrowIfNull(message.VideoKey);
-                using var __ = Log.BeginScopeMsg(logger, message.Hash);
-                await videoCopyingService.ProcessVideo(message.VideoKey, stoppingToken);
+                Log.WaitingForMessage(Logger);
+                await semaphore.WaitAsync(stoppingToken);
+                Log.WorkerReleased(Logger);
+                continue;
             }
-            finally
-            {
-                semaphore.Release();
-            }
+
+            ArgumentNullException.ThrowIfNull(message.VideoKey);
+            using var __ = Log.BeginScopeMsg(Logger, message.Hash);
+            await VideoCopyingService.ProcessVideo(message.VideoKey, stoppingToken);
         }
     }
 }
