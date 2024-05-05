@@ -12,7 +12,7 @@ public class DownloaderCdkStackConfig
 
 	public required string UpdateVideoStatusLambdaFunctionName { get; init; }
 
-	public required string NewEpisodeSnsTopicArn { get; init; }
+    public required string VideoRegisteredTopicArn { get; init; }
 
 	public void Validate()
 	{
@@ -20,6 +20,6 @@ public class DownloaderCdkStackConfig
 		ArgumentException.ThrowIfNullOrWhiteSpace(LoanApiToken);
 		ArgumentException.ThrowIfNullOrWhiteSpace(GetVideoToDownloadLambdaFunctionName);
 		ArgumentException.ThrowIfNullOrWhiteSpace(UpdateVideoStatusLambdaFunctionName);
-		ArgumentException.ThrowIfNullOrWhiteSpace(NewEpisodeSnsTopicArn);
+		ArgumentException.ThrowIfNullOrWhiteSpace(VideoRegisteredTopicArn);
 	}
 }

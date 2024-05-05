@@ -34,7 +34,7 @@ public class DownloaderCdkStack : Stack
 
         var image = BuildAndPushWorkerImage(user);
 
-        var newEpisodesQueue = CreateNewEpisodesQueue(config, user);
+        var videoRegisteredQueue = CreateVideoRegisteredQueue(config, user);
         GrantPermissionsForLambdas(config, user);
 
         var logGroup = CreateLogGroup();
@@ -43,12 +43,12 @@ public class DownloaderCdkStack : Stack
 
         var accessKey = new CfnAccessKey(this, "AccessKey", new CfnAccessKeyProps { UserName = user.UserName });
 
-        Out("Bounan.Downloader.Config", JsonConvert.SerializeObject(config));
-        Out("Bounan.Downloader.LogGroupName", logGroup.LogGroupName);
-        Out("Bounan.Downloader.UserAccessKeyId", accessKey.Ref);
-        Out("Bounan.Downloader.UserSecretAccessKey", accessKey.AttrSecretAccessKey);
-        Out("Bounan.Downloader.NewEpisodesQueueUrl", newEpisodesQueue.QueueUrl);
-        Out("Bounan.Downloader.ImageUri", image.ImageUri);
+        Out("Config", JsonConvert.SerializeObject(config));
+        Out("LogGroupName", logGroup.LogGroupName);
+        Out("UserAccessKeyId", accessKey.Ref);
+        Out("UserSecretAccessKey", accessKey.AttrSecretAccessKey);
+        Out("VideoRegisteredQueueUrl", videoRegisteredQueue.QueueUrl);
+        Out("ImageUri", image.ImageUri);
     }
 
     private DockerImageAsset BuildAndPushWorkerImage(IGrantable user)
@@ -59,18 +59,13 @@ public class DownloaderCdkStack : Stack
         return dockerImage;
     }
 
-    private IQueue CreateNewEpisodesQueue(DownloaderCdkStackConfig config, IGrantable user)
+    private IQueue CreateVideoRegisteredQueue(DownloaderCdkStackConfig config, IGrantable user)
     {
-        var newEpisodesQueue = new Queue(this, "NewEpisodesQueue", new QueueProps
-        {
-            VisibilityTimeout = Duration.Seconds(300),
-            RetentionPeriod = Duration.Minutes(1),
-        });
+        var newEpisodesTopic = Topic.FromTopicArn(this, "VideoRegisteredTopic", config.VideoRegisteredTopicArn);
+        var newEpisodesQueue = new Queue(this, "VideoRegisteredQueue");
+        newEpisodesTopic.AddSubscription(new SqsSubscription(newEpisodesQueue));
 
         newEpisodesQueue.GrantConsumeMessages(user);
-
-        var newEpisodesTopic = Topic.FromTopicArn(this, "NewEpisodesTopic", config.NewEpisodeSnsTopicArn);
-        newEpisodesTopic.AddSubscription(new SqsSubscription(newEpisodesQueue));
 
         return newEpisodesQueue;
     }
