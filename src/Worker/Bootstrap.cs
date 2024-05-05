@@ -2,11 +2,8 @@
 using Amazon.SQS;
 using Bounan.Downloader.Worker.Clients;
 using Bounan.Downloader.Worker.Configuration;
-using Bounan.Downloader.Worker.Factories;
 using Bounan.Downloader.Worker.Interfaces;
 using Bounan.Downloader.Worker.Services;
-using Microsoft.Extensions.Options;
-using Telegram.Bot;
 using SqsClient = Bounan.Downloader.Worker.Clients.SqsClient;
 
 namespace Bounan.Downloader.Worker;
@@ -20,8 +17,6 @@ public static class Bootstrap
 
         services.Configure<AniManConfig>(configuration.GetSection(AniManConfig.SectionName));
         services.Configure<SqsConfig>(configuration.GetSection(SqsConfig.SectionName));
-        services.Configure<VideoServiceConfig>(configuration.GetSection(VideoServiceConfig.SectionName));
-        services.Configure<TelegramConfig>(configuration.GetSection(TelegramConfig.SectionName));
         services.Configure<ProcessingConfig>(configuration.GetSection(ProcessingConfig.SectionName));
         services.Configure<ThumbnailConfig>(configuration.GetSection(ThumbnailConfig.SectionName));
 
@@ -35,6 +30,7 @@ public static class Bootstrap
 
         LoanApi.Registrar.RegisterConfiguration(services, configuration);
         LoanApi.Registrar.RegisterDownloaderServices(services);
+        Hls2TlgrUploader.Registrar.RegisterServices(services, configuration.GetRequiredSection("Hls2TlgrUploader"));
 
         services.AddHttpClient();
 
@@ -45,23 +41,7 @@ public static class Bootstrap
 
         services.AddSingleton<ISqsClient, SqsClient>();
         services.AddSingleton<IVideoCopyingService, VideoCopyingService>();
-        services.AddSingleton<IVideoMergingService, VideoMergingService>();
-        services.AddSingleton<IFfmpegFactory, FfmpegFactory>();
         services.AddSingleton<IThumbnailService, ThumbnailService>();
-
-        services.AddTransient<IFfmpegService, FfmpegService>();
-
-        services.AddSingleton<ITelegramBotClient, TelegramBotClient>(provider =>
-        {
-            var telegramConfig = provider.GetRequiredService<IOptions<TelegramConfig>>().Value;
-            var clientOptions = new TelegramBotClientOptions(telegramConfig.BotToken, telegramConfig.ApiUrl.ToString());
-            var defaultClient = new HttpClient
-            {
-                Timeout = TimeSpan.FromSeconds(telegramConfig.TimeoutSeconds)
-            };
-
-            return new TelegramBotClient(clientOptions, defaultClient);
-        });
 
         services.AddHostedService<WorkerService>();
     }

@@ -13,8 +13,8 @@ internal partial class VideoCopyingService
         [LoggerMessage(LogLevel.Debug, "Processing video {SignedUrl}")]
         public static partial void ProcessingVideo(ILogger logger, Uri signedUrl);
 
-        [LoggerMessage(LogLevel.Debug, "Got video info: {VideoInfo}")]
-        public static partial void GotVideoInfo(ILogger logger, VideoInfo videoInfo);
+        [LoggerMessage(LogLevel.Debug, "Got video info: {PlaylistUri}; {OrigThumbnail}")]
+        public static partial void GotVideoInfo(ILogger logger, Uri playlistUri, Uri origThumbnail);
 
         [LoggerMessage(LogLevel.Information, "Video uploaded with message id: {MessageId}")]
         public static partial void VideoUploaded(ILogger logger, int messageId);

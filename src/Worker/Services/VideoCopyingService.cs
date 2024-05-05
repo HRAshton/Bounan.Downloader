@@ -1,6 +1,7 @@
 ﻿using System.Diagnostics.CodeAnalysis;
 using System.Text;
 using Bounan.Common.Models;
+using Bounan.Downloader.Hls2TlgrUploader.Interfaces;
 using Bounan.Downloader.Worker.Configuration;
 using Bounan.Downloader.Worker.Interfaces;
 using Bounan.Downloader.Worker.Models;
@@ -8,66 +9,42 @@ using Bounan.LoanApi.Interfaces;
 using JetBrains.Annotations;
 using Microsoft.Extensions.Options;
 using Newtonsoft.Json;
-using Telegram.Bot;
-using Telegram.Bot.Types;
-using File = System.IO.File;
 
 namespace Bounan.Downloader.Worker.Services;
 
-internal partial class VideoCopyingService : IVideoCopyingService
+internal partial class VideoCopyingService(
+    ILogger<VideoCopyingService> logger,
+    IOptions<ProcessingConfig> processingConfig,
+    IHttpClientFactory httpClientFactory,
+    ILoanApiComClient loanApiComClient,
+    ILoanApiInfoClient loanApiInfoClient,
+    IAniManClient aniManClient,
+    IThumbnailService thumbnailService,
+    IVideoUploadingService videoUploadingService)
+    : IVideoCopyingService
 {
-    private readonly TelegramConfig _telegramConfig;
-    private readonly VideoServiceConfig _videoServiceConfig;
+    private readonly ProcessingConfig _processingConfig = processingConfig.Value;
 
-    public VideoCopyingService(
-        ILogger<VideoCopyingService> logger,
-        IOptions<VideoServiceConfig> videoServiceConfig,
-        IOptions<TelegramConfig> telegramConfig,
-        ILoanApiComClient loanApiComClient,
-        ILoanApiInfoClient loanApiInfoClient,
-        IFfmpegFactory ffmpegFactory,
-        ITelegramBotClient telegramClient,
-        IAniManClient aniManClient,
-        IVideoMergingService videoMergingService,
-        IThumbnailService thumbnailService)
-    {
-        Logger = logger;
-        LoanApiComClient = loanApiComClient;
-        LoanApiInfoClient = loanApiInfoClient;
-        FfmpegFactory = ffmpegFactory;
-        TelegramClient = telegramClient;
-        AniManClient = aniManClient;
-        VideoMergingService = videoMergingService;
-        ThumbnailService = thumbnailService;
+    private ILogger<VideoCopyingService> Logger => logger;
 
-        ArgumentNullException.ThrowIfNull(telegramConfig, nameof(telegramConfig));
-        ArgumentNullException.ThrowIfNull(videoServiceConfig, nameof(videoServiceConfig));
-        _telegramConfig = telegramConfig.Value;
-        _videoServiceConfig = videoServiceConfig.Value;
-    }
+    private IHttpClientFactory HttpClientFactory => httpClientFactory;
 
-    private ILogger<VideoCopyingService> Logger { get; }
+    private IAniManClient AniManClient => aniManClient;
 
-    private IAniManClient AniManClient { get; }
+    private ILoanApiComClient LoanApiComClient => loanApiComClient;
 
-    private ILoanApiComClient LoanApiComClient { get; }
+    private ILoanApiInfoClient LoanApiInfoClient => loanApiInfoClient;
 
-    private ILoanApiInfoClient LoanApiInfoClient { get; }
+    private IVideoUploadingService VideoUploadingService => videoUploadingService;
 
-    private IFfmpegFactory FfmpegFactory { get; }
-
-    private IVideoMergingService VideoMergingService { get; }
-
-    private IThumbnailService ThumbnailService { get; }
-
-    private ITelegramBotClient TelegramClient { get; }
+    private IThumbnailService ThumbnailService => thumbnailService;
 
     [SuppressMessage("Design", "CA1031:Do not catch general exception types")]
     public async Task ProcessVideo(IVideoKey videoKey, CancellationToken cancellationToken)
     {
         Log.ReceivedVideoKey(Logger, videoKey);
         using var innerCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
-        innerCts.CancelAfter(_videoServiceConfig.TimeoutSeconds * 1000);
+        innerCts.CancelAfter(_processingConfig.TimeoutSeconds * 1000);
 
         ArgumentNullException.ThrowIfNull(videoKey);
         try
@@ -75,18 +52,23 @@ internal partial class VideoCopyingService : IVideoCopyingService
             var signedUri = await LoanApiComClient.GetRequiredSignedLinkAsync(videoKey, innerCts.Token);
             Log.ProcessingVideo(Logger, signedUri);
 
-            using var ffmpegService = FfmpegFactory.CreateFfmpegService(innerCts.Token);
-            var (videoInfo, origThumbnail) = await DownloadAndMergeVideoAsync(signedUri, ffmpegService, innerCts.Token);
-            Log.GotVideoInfo(Logger, videoInfo);
+            var (playlistUri, origThumbnail) = await GetPlaylistAndThumbnailAsync(signedUri, innerCts.Token);
+            Log.GotVideoInfo(Logger, playlistUri, origThumbnail);
 
-            var videoMetadata = new VideoMetadata(videoKey, signedUri.ToString());
+            var videoParts = await GetVideoPartsAsync(playlistUri, innerCts.Token);
 
-            await using var thumbnailStream = await ThumbnailService.GetThumbnailJpegStreamAsync(
+            var thumbnailStreamTask = ThumbnailService.GetThumbnailJpegStreamAsync(
                 origThumbnail,
                 videoKey,
                 innerCts.Token);
-            
-            var messageId = await UploadVideoAsync(videoInfo, thumbnailStream, videoMetadata, innerCts.Token);
+
+            var videoMetadata = new VideoMetadata(videoKey, signedUri.ToString());
+
+            var messageId = await VideoUploadingService.CopyToTelegramAsync(
+                videoParts,
+                thumbnailStreamTask,
+                EncodeMetadata(videoMetadata),
+                innerCts.Token);
             Log.VideoUploaded(Logger, messageId);
 
             await SendResult(videoKey, messageId, innerCts.Token);
@@ -98,9 +80,8 @@ internal partial class VideoCopyingService : IVideoCopyingService
         }
     }
 
-    private async Task<(VideoInfo VideoInfo, Uri Thumbnail)> DownloadAndMergeVideoAsync(
+    private async Task<(Uri Playlist, Uri Thumbnail)> GetPlaylistAndThumbnailAsync(
         Uri signedUri,
-        IFfmpegService ffmpegService,
         CancellationToken cancellationToken)
     {
         var (playlists, thumb) =
@@ -110,40 +91,27 @@ internal partial class VideoCopyingService : IVideoCopyingService
         var sortedPlaylists = playlists
             .OrderBy(pair => pair.Key.Length)
             .ThenBy(pair => pair.Key);
-        var bestQualityPlaylist = _videoServiceConfig.UseLowestQuality
+        var bestQualityPlaylist = _processingConfig.UseLowestQuality
             ? sortedPlaylists.First().Value
             : sortedPlaylists.Last().Value;
         Log.ProcessingPlaylist(Logger, bestQualityPlaylist);
 
-        await VideoMergingService.DownloadToPipeAsync(bestQualityPlaylist, ffmpegService.PipeWriter, cancellationToken);
-
-        await ffmpegService.PipeWriter.CompleteAsync();
-        var videoInfo = await ffmpegService.GetResultAsync(cancellationToken);
-
-        return (videoInfo, thumb);
+        return (bestQualityPlaylist, thumb);
     }
 
-    private async Task<int> UploadVideoAsync(
-        VideoInfo videoInfo,
-        Stream thumbnailStream,
-        VideoMetadata videoMetadata,
-        CancellationToken cancellationToken)
+    private async Task<IList<Uri>> GetVideoPartsAsync(Uri playlist, CancellationToken cancellationToken)
     {
-        await using var fileStream = File.OpenRead(videoInfo.FilePath);
+        using var httpClient = HttpClientFactory.CreateClient();
 
-        var message = await TelegramClient.SendVideoAsync(
-            _telegramConfig.DestinationChatId,
-            new InputFileStream(fileStream),
-            caption: EncodeMetadata(videoMetadata),
-            width: videoInfo.Width,
-            height: videoInfo.Height,
-            duration: videoInfo.DurationSec,
-            thumbnail: new InputFileStream(thumbnailStream),
-            supportsStreaming: true,
-            cancellationToken: cancellationToken);
-        Log.VideoUploaded(Logger);
+        var response = await httpClient.GetAsync(playlist, cancellationToken);
+        var content = await response.Content.ReadAsStringAsync(cancellationToken);
+        var videoParts = content
+            .Split('\n')
+            .Where(line => line.StartsWith("./", StringComparison.Ordinal))
+            .Select(relativeFilePath => new Uri(playlist, relativeFilePath))
+            .ToArray();
 
-        return message.MessageId;
+        return videoParts;
     }
 
     private async Task SendResult(IVideoKey videoKey, int? messageId, CancellationToken cancellationToken)
