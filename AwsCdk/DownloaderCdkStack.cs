@@ -66,8 +66,8 @@ public class DownloaderCdkStack : Stack
              LoanApi__Token=
              Processing__Threads=2
              Processing__TimeoutSeconds=600
-             TELEGRAM_API_HASH=
              TELEGRAM_API_ID=
+             TELEGRAM_API_HASH=
              Thumbnail__BotId=
              """);
     }
