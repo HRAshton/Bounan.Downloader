@@ -49,6 +49,27 @@ public class DownloaderCdkStack : Stack
         Out("UserSecretAccessKey", accessKey.AttrSecretAccessKey);
         Out("VideoRegisteredQueueUrl", videoRegisteredQueue.QueueUrl);
         Out("ImageUri", image.ImageUri);
+        
+        Out(
+            ".env",
+            $"""
+             AWS_REGION={Region}
+             WORKER_IMAGE_URI={image.ImageUri}
+             AWS_ACCESS_KEY_ID={accessKey.Ref}
+             AWS_SECRET_ACCESS_KEY={accessKey.AttrSecretAccessKey}
+             AniMan__GetVideoToDownloadLambdaFunctionName={config.GetVideoToDownloadLambdaFunctionName}
+             AniMan__UpdateVideoStatusLambdaFunctionName={config.UpdateVideoStatusLambdaFunctionName}
+             Logging__LogGroup={logGroup.LogGroupName}
+             Sqs__NotificationQueueUrl={videoRegisteredQueue.QueueUrl}
+             Hls2TlgrUploader__Telegram__BotToken=
+             Hls2TlgrUploader__Telegram__DestinationChatId=
+             LoanApi__Token=
+             Processing__Threads=2
+             Processing__TimeoutSeconds=600
+             TELEGRAM_API_HASH=
+             TELEGRAM_API_ID=
+             Thumbnail__BotId=
+             """);
     }
 
     private DockerImageAsset BuildAndPushWorkerImage(IGrantable user)
@@ -74,23 +95,20 @@ public class DownloaderCdkStack : Stack
     {
         var getAnimeToDownloadLambda = Function.FromFunctionName(
             this,
-            "LambdaHandlers.GetAnime",
+            "GetAnime",
             config.GetVideoToDownloadLambdaFunctionName);
         getAnimeToDownloadLambda.GrantInvoke(user);
 
         var updateVideoStatusLambda = Function.FromFunctionName(
             this,
-            "LambdaHandlers.UpdateVideoStatus",
+            "UpdateVideoStatus",
             config.UpdateVideoStatusLambdaFunctionName);
         updateVideoStatusLambda.GrantInvoke(user);
     }
 
     private ILogGroup CreateLogGroup()
     {
-        return new LogGroup(this, "LogGroup", new LogGroupProps
-        {
-            Retention = RetentionDays.ONE_WEEK
-        });
+        return new LogGroup(this, "LogGroup", new LogGroupProps { Retention = RetentionDays.ONE_WEEK });
     }
 
     private void SetErrorAlarm(DownloaderCdkStackConfig config, ILogGroup logGroup)
