@@ -1,11 +1,10 @@
-﻿using Bounan.Common.Models;
-using Bounan.Downloader.Worker.Models;
+﻿using Bounan.Common;
 
 namespace Bounan.Downloader.Worker.Interfaces;
 
 public interface IAniManClient
 {
-    Task<DwnQueueResponse?> GetNextVideo(CancellationToken cancellationToken);
+    Task<DownloaderResponse?> GetNextVideo(CancellationToken cancellationToken);
 
-    Task SendResult(IDwnResultNotification result, CancellationToken cancellationToken);
+    Task SendResult(DownloaderResultRequest result, CancellationToken cancellationToken);
 }

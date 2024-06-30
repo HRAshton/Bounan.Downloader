@@ -1,4 +1,5 @@
 using Bounan.Downloader.Worker.Configuration;
+using Bounan.Downloader.Worker.Extensions;
 using Bounan.Downloader.Worker.Interfaces;
 using Microsoft.Extensions.Options;
 
@@ -60,7 +61,7 @@ public partial class WorkerService(
             }
 
             ArgumentNullException.ThrowIfNull(message.VideoKey);
-            using var __ = Log.BeginScopeMsg(Logger, message.Hash);
+            using var __ = Log.BeginScopeMsg(Logger, message.VideoKey.CalculateHash());
             await VideoCopyingService.ProcessVideo(message.VideoKey, stoppingToken);
         }
     }

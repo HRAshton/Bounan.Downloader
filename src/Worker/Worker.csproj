@@ -32,7 +32,7 @@
     </ItemGroup>
 
     <ItemGroup>
-        <ProjectReference Include="..\Common\Common.csproj"/>
+        <ProjectReference Include="..\Common\cs\Common.csproj"/>
         <ProjectReference Include="..\Hls2TlgrUploader\Hls2TlgrUploader.csproj"/>
         <ProjectReference Include="..\LoanApi\LoanApi\LoanApi.csproj"/>
     </ItemGroup>

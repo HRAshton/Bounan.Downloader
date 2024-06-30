@@ -1,4 +1,4 @@
-﻿using Bounan.Common.Models;
+﻿using Bounan.Common;
 
 namespace Bounan.Downloader.Worker.Services;
 

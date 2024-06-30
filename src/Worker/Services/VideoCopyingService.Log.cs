@@ -1,5 +1,4 @@
-﻿using Bounan.Common.Models;
-using Bounan.Downloader.Worker.Models;
+﻿using Bounan.Common;
 
 namespace Bounan.Downloader.Worker.Services;
 
@@ -35,6 +34,6 @@ internal partial class VideoCopyingService
         public static partial void ErrorProcessingVideo(ILogger logger, Exception exception);
 
         [LoggerMessage(LogLevel.Information, "Result sent: {Result}")]
-        public static partial void ResultSent(ILogger logger, IDwnResultNotification result);
+        public static partial void ResultSent(ILogger logger, DownloaderResultRequest result);
     }
 }

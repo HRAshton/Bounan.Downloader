@@ -18,7 +18,7 @@ ARG BUILD_CONFIGURATION=Release
 WORKDIR /src
 
 COPY ["src/Common/StyleCop.props", "Common/"]
-COPY ["src/Common/Common.csproj", "Common/"]
+COPY ["src/Common/cs/Common.csproj", "Common/"]
 COPY ["src/LoanApi/StyleCop.props", "LoanApi/"]
 COPY ["src/LoanApi/LoanApi/LoanApi.csproj", "LoanApi/LoanApi/"]
 COPY ["src/Worker/Worker.csproj", "Worker/"]

@@ -3,36 +3,29 @@ using System.Net;
 using System.Text;
 using Amazon.Lambda;
 using Amazon.Lambda.Model;
-using Bounan.Common.Models;
+using Bounan.Common;
 using Bounan.Downloader.Worker.Configuration;
 using Bounan.Downloader.Worker.Interfaces;
-using Bounan.Downloader.Worker.Models;
 using Microsoft.Extensions.Options;
 using Newtonsoft.Json;
 
 namespace Bounan.Downloader.Worker.Clients;
 
 [SuppressMessage("Design", "CA1031:Do not catch general exception types")]
-public partial class AniManClient : IAniManClient, IDisposable
+public partial class AniManClient(
+    ILogger<AniManClient> logger,
+    IOptions<AniManConfig> aniManConfig,
+    IAmazonLambda lambdaClient)
+    : IAniManClient, IDisposable
 {
     private bool _disposedValue;
     private readonly SemaphoreSlim _semaphore = new (1, 1);
 
-    public AniManClient(
-        ILogger<AniManClient> logger,
-        IOptions<AniManConfig> aniManConfig,
-        IAmazonLambda lambdaClient)
-    {
-        LambdaClient = lambdaClient;
-        Logger = logger;
-        AniManConfig = aniManConfig;
-    }
+    private ILogger<AniManClient> Logger { get; } = logger;
 
-    private ILogger<AniManClient> Logger { get; }
+    private IOptions<AniManConfig> AniManConfig { get; } = aniManConfig;
 
-    private IOptions<AniManConfig> AniManConfig { get; }
-
-    private IAmazonLambda LambdaClient { get; }
+    private IAmazonLambda LambdaClient { get; } = lambdaClient;
 
     public void Dispose()
     {
@@ -51,7 +44,7 @@ public partial class AniManClient : IAniManClient, IDisposable
         _disposedValue = true;
     }
 
-    public async Task<DwnQueueResponse?> GetNextVideo(CancellationToken cancellationToken)
+    public async Task<DownloaderResponse?> GetNextVideo(CancellationToken cancellationToken)
     {
         await _semaphore.WaitAsync(cancellationToken);
         try
@@ -70,7 +63,7 @@ public partial class AniManClient : IAniManClient, IDisposable
             }
 
             var payload = Encoding.UTF8.GetString(response.Payload.ToArray());
-            return JsonConvert.DeserializeObject<DwnQueueResponse>(payload);
+            return JsonConvert.DeserializeObject<DownloaderResponse>(payload);
         }
         catch (Exception ex)
         {
@@ -83,7 +76,7 @@ public partial class AniManClient : IAniManClient, IDisposable
         }
     }
 
-    public async Task SendResult(IDwnResultNotification result, CancellationToken cancellationToken)
+    public async Task SendResult(DownloaderResultRequest result, CancellationToken cancellationToken)
     {
         await _semaphore.WaitAsync(cancellationToken);
         try

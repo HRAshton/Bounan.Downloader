@@ -79,6 +79,7 @@ internal partial class FfmpegService : IFfmpegService
 
     public void Run(string fileId, CancellationToken cancellationToken)
     {
+        Directory.CreateDirectory(Path.GetDirectoryName(_processingConfig.TempVideoFilePattern)!);
         _filePath = string.Format(CultureInfo.InvariantCulture, _processingConfig.TempVideoFilePattern, fileId);
         RunInternal(cancellationToken);
     }

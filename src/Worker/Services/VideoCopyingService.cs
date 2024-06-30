@@ -1,10 +1,9 @@
 ﻿using System.Diagnostics.CodeAnalysis;
 using System.Text;
-using Bounan.Common.Models;
+using Bounan.Common;
 using Bounan.Downloader.Hls2TlgrUploader.Interfaces;
 using Bounan.Downloader.Worker.Configuration;
 using Bounan.Downloader.Worker.Interfaces;
-using Bounan.Downloader.Worker.Models;
 using Bounan.LoanApi.Interfaces;
 using JetBrains.Annotations;
 using Microsoft.Extensions.Options;
@@ -116,7 +115,8 @@ internal partial class VideoCopyingService(
 
     private async Task SendResult(IVideoKey videoKey, int? messageId, CancellationToken cancellationToken)
     {
-        var dwnResult = new DwnResultNotification(videoKey.MyAnimeListId, videoKey.Dub, videoKey.Episode, messageId);
+        var key = new VideoKey(videoKey.MyAnimeListId, videoKey.Dub, videoKey.Episode);
+        var dwnResult = new DownloaderResultRequest(key, messageId);
         await AniManClient.SendResult(dwnResult, cancellationToken);
         Log.ResultSent(Logger, dwnResult);
     }

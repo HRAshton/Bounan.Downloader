@@ -1,6 +1,6 @@
 ﻿using System.Diagnostics.CodeAnalysis;
 using System.Globalization;
-using Bounan.Common.Models;
+using Bounan.Common;
 using Bounan.Downloader.Worker.Configuration;
 using Bounan.Downloader.Worker.Extensions;
 using Bounan.Downloader.Worker.Interfaces;
