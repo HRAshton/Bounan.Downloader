@@ -42,6 +42,11 @@ public static class Bootstrap
         services.AddSingleton<ISqsClient, SqsClient>();
         services.AddSingleton<IVideoCopyingService, VideoCopyingService>();
         services.AddSingleton<IThumbnailService, ThumbnailService>();
+        
+        services.ConfigureHttpClientDefaults(http =>
+        {
+            http.AddStandardResilienceHandler();
+        });
 
         services.AddHostedService<WorkerService>();
     }
