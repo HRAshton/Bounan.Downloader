@@ -1,5 +1,6 @@
 ﻿using Amazon.Lambda;
 using Amazon.SQS;
+using Bounan.Downloader.Hls2TlgrUploader.Constants;
 using Bounan.Downloader.Worker.Clients;
 using Bounan.Downloader.Worker.Configuration;
 using Bounan.Downloader.Worker.Interfaces;
@@ -34,6 +35,8 @@ public static class Bootstrap
         Hls2TlgrUploader.Registrar.RegisterServices(services, configuration.GetRequiredSection("Hls2TlgrUploader"));
 
         services.AddHttpClient();
+        services.AddHttpClient(HttpClients.Hls2TlgrUploaderHttpClient)
+            .AddStandardResilienceHandler();
 
         var awsOptions = configuration.GetAWSOptions();
         services.AddSingleton<IAmazonLambda>(_ => awsOptions.CreateServiceClient<IAmazonLambda>());
@@ -43,13 +46,6 @@ public static class Bootstrap
         services.AddSingleton<ISqsClient, SqsClient>();
         services.AddSingleton<IVideoCopyingService, VideoCopyingService>();
         services.AddSingleton<IThumbnailService, ThumbnailService>();
-
-        services.AddHttpClient()
-            .ConfigureHttpClientDefaults(httpClient =>
-            {
-                httpClient.AddStandardResilienceHandler();
-                httpClient.ConfigureHttpClient(c => c.Timeout = TimeSpan.FromSeconds(10 * 60));
-            });
 
         services.AddHostedService<WorkerService>();
     }

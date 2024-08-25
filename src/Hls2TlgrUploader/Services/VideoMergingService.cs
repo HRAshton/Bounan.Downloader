@@ -1,5 +1,6 @@
 ﻿using System.IO.Pipelines;
 using Bounan.Downloader.Hls2TlgrUploader.Configuration;
+using Bounan.Downloader.Hls2TlgrUploader.Constants;
 using Bounan.Downloader.Hls2TlgrUploader.Helpers;
 using Bounan.Downloader.Hls2TlgrUploader.Interfaces;
 using Microsoft.Extensions.Logging;
@@ -26,7 +27,7 @@ internal sealed partial class VideoMergingService(
     {
         Log.StartedMerging(Logger, hlsParts.Count);
 
-        using var httpClient = HttpClientFactory.CreateClient();
+        using var httpClient = HttpClientFactory.CreateClient(HttpClients.Hls2TlgrUploaderHttpClient);
 
         await SemiConcurrentProcessingHelper.Process(
             hlsParts,
