@@ -4,6 +4,7 @@ using Bounan.Downloader.Worker.Clients;
 using Bounan.Downloader.Worker.Configuration;
 using Bounan.Downloader.Worker.Interfaces;
 using Bounan.Downloader.Worker.Services;
+using Microsoft.Extensions.Http.Resilience;
 using SqsClient = Bounan.Downloader.Worker.Clients.SqsClient;
 
 namespace Bounan.Downloader.Worker;
@@ -42,11 +43,13 @@ public static class Bootstrap
         services.AddSingleton<ISqsClient, SqsClient>();
         services.AddSingleton<IVideoCopyingService, VideoCopyingService>();
         services.AddSingleton<IThumbnailService, ThumbnailService>();
-        
-        services.ConfigureHttpClientDefaults(http =>
-        {
-            http.AddStandardResilienceHandler();
-        });
+
+        services.AddHttpClient()
+            .ConfigureHttpClientDefaults(httpClient =>
+            {
+                httpClient.AddStandardResilienceHandler();
+                httpClient.ConfigureHttpClient(c => c.Timeout = TimeSpan.FromSeconds(10 * 60));
+            });
 
         services.AddHostedService<WorkerService>();
     }
