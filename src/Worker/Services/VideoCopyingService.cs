@@ -3,6 +3,7 @@ using System.Text;
 using Bounan.Common;
 using Bounan.Downloader.Hls2TlgrUploader.Interfaces;
 using Bounan.Downloader.Worker.Configuration;
+using Bounan.Downloader.Worker.Helpers;
 using Bounan.Downloader.Worker.Interfaces;
 using Bounan.LoanApi.Interfaces;
 using JetBrains.Annotations;
@@ -48,35 +49,42 @@ internal partial class VideoCopyingService(
         ArgumentNullException.ThrowIfNull(videoKey);
         try
         {
-            var signedUri = await LoanApiComClient.GetRequiredSignedLinkAsync(videoKey, innerCts.Token);
-            Log.ProcessingVideo(Logger, signedUri);
-
-            var (playlistUri, origThumbnail) = await GetPlaylistAndThumbnailAsync(signedUri, innerCts.Token);
-            Log.GotVideoInfo(Logger, playlistUri, origThumbnail);
-
-            var videoParts = await GetVideoPartsAsync(playlistUri, innerCts.Token);
-
-            var thumbnailStreamTask = ThumbnailService.GetThumbnailJpegStreamAsync(
-                origThumbnail,
-                videoKey,
-                innerCts.Token);
-
-            var videoMetadata = new VideoMetadata(videoKey, signedUri.ToString());
-
-            var messageId = await VideoUploadingService.CopyToTelegramAsync(
-                videoParts,
-                thumbnailStreamTask,
-                EncodeMetadata(videoMetadata),
-                innerCts.Token);
-            Log.VideoUploaded(Logger, messageId);
-
-            await SendResult(videoKey, messageId, innerCts.Token);
+            await Retry.DoAsync(
+                async ct => await ProcessVideoInternalAsync(videoKey, ct),
+                cancellationToken: cancellationToken);
         }
         catch (Exception e)
         {
             Log.ErrorProcessingVideo(Logger, e);
             await SendResult(videoKey, null, innerCts.Token);
         }
+    }
+
+    private async Task ProcessVideoInternalAsync(IVideoKey videoKey, CancellationToken cancellationToken)
+    {
+        var signedUri = await LoanApiComClient.GetRequiredSignedLinkAsync(videoKey, cancellationToken);
+        Log.ProcessingVideo(Logger, signedUri);
+
+        var (playlistUri, origThumbnail) = await GetPlaylistAndThumbnailAsync(signedUri, cancellationToken);
+        Log.GotVideoInfo(Logger, playlistUri, origThumbnail);
+
+        var videoParts = await GetVideoPartsAsync(playlistUri, cancellationToken);
+
+        var thumbnailStreamTask = ThumbnailService.GetThumbnailJpegStreamAsync(
+            origThumbnail,
+            videoKey,
+            cancellationToken);
+
+        var videoMetadata = new VideoMetadata(videoKey, signedUri.ToString());
+
+        var messageId = await VideoUploadingService.CopyToTelegramAsync(
+            videoParts,
+            thumbnailStreamTask,
+            EncodeMetadata(videoMetadata),
+            cancellationToken);
+        Log.VideoUploaded(Logger, messageId);
+
+        await SendResult(videoKey, messageId, cancellationToken);
     }
 
     private async Task<(Uri Playlist, Uri Thumbnail)> GetPlaylistAndThumbnailAsync(
