@@ -1,11 +1,11 @@
 ﻿using System.Diagnostics.CodeAnalysis;
 using System.Text;
 using Bounan.Common;
-using Bounan.Downloader.Hls2TlgrUploader.Interfaces;
 using Bounan.Downloader.Worker.Configuration;
 using Bounan.Downloader.Worker.Helpers;
 using Bounan.Downloader.Worker.Interfaces;
 using Bounan.LoanApi.Interfaces;
+using Hls2TlgrUploader.Interfaces;
 using JetBrains.Annotations;
 using Microsoft.Extensions.Options;
 using Newtonsoft.Json;
@@ -77,14 +77,14 @@ internal partial class VideoCopyingService(
 
         var videoMetadata = new VideoMetadata(videoKey, signedUri.ToString());
 
-        var messageId = await VideoUploadingService.CopyToTelegramAsync(
+        var message = await VideoUploadingService.CopyToTelegramAsync(
             videoParts,
             thumbnailStreamTask,
             EncodeMetadata(videoMetadata),
             cancellationToken);
-        Log.VideoUploaded(Logger, messageId);
+        Log.VideoUploaded(Logger, message.MessageId);
 
-        await SendResult(videoKey, messageId, cancellationToken);
+        await SendResult(videoKey, message.MessageId, cancellationToken);
     }
 
     private async Task<(Uri Playlist, Uri Thumbnail)> GetPlaylistAndThumbnailAsync(

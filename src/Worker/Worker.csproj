@@ -19,6 +19,7 @@
         <PackageReference Include="AWSSDK.Extensions.NETCore.Setup" Version="3.7.301" />
         <PackageReference Include="AWSSDK.Lambda" Version="3.7.402.1" />
         <PackageReference Include="AWSSDK.SQS" Version="3.7.400.11" />
+        <PackageReference Include="Hls2TlgrUploader" Version="1.0.0" />
         <PackageReference Include="JetBrains.Annotations" Version="2024.2.0" />
         <PackageReference Include="Microsoft.Extensions.Hosting" Version="8.0.0"/>
         <PackageReference Include="SixLabors.ImageSharp" Version="3.1.5" />
@@ -33,7 +34,6 @@
 
     <ItemGroup>
         <ProjectReference Include="..\Common\cs\Common.csproj"/>
-        <ProjectReference Include="..\Hls2TlgrUploader\Hls2TlgrUploader.csproj"/>
         <ProjectReference Include="..\LoanApi\LoanApi\LoanApi.csproj"/>
     </ItemGroup>
 </Project>

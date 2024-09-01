@@ -4,6 +4,7 @@ using Bounan.Downloader.Worker.Clients;
 using Bounan.Downloader.Worker.Configuration;
 using Bounan.Downloader.Worker.Interfaces;
 using Bounan.Downloader.Worker.Services;
+using Hls2TlgrUploader;
 using SqsClient = Bounan.Downloader.Worker.Clients.SqsClient;
 
 namespace Bounan.Downloader.Worker;
@@ -30,7 +31,7 @@ public static class Bootstrap
 
         LoanApi.Registrar.RegisterConfiguration(services, configuration);
         LoanApi.Registrar.RegisterDownloaderServices(services);
-        Hls2TlgrUploader.Registrar.RegisterServices(services, configuration.GetRequiredSection("Hls2TlgrUploader"));
+        services.AddHls2TlgrUploader(configuration.GetRequiredSection("Hls2TlgrUploader"));
 
         services.AddHttpClient();
 
