@@ -6,6 +6,9 @@ public partial class SqsClient
     {
         [LoggerMessage(LogLevel.Debug, "Waiting for a message")]
         public static partial void WaitingForMessage(ILogger logger);
+        
+        [LoggerMessage(LogLevel.Debug, "Received messages: {MessageCount}")]
+        public static partial void ReceivedMessages(ILogger logger, int messageCount);
 
         [LoggerMessage(LogLevel.Debug, "Running video processing")]
         public static partial void RunningVideoProcessing(ILogger logger);

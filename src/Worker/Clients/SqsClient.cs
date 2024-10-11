@@ -72,6 +72,7 @@ public partial class SqsClient : ISqsClient, IDisposable
                 try
                 {
                     var response = await AmazonAmazonSqs.ReceiveMessageAsync(_receiveMessageRequest, cancellationToken);
+                    Log.ReceivedMessages(Logger, response.Messages.Count);
                     if (response.Messages.Count <= 0) continue;
 
                     _ = AmazonAmazonSqs.DeleteMessageAsync(
