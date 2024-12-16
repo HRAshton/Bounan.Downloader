@@ -25,7 +25,7 @@
       - telegram-bot-api-server
   
   telegram-bot-api-server:
-    image: aiogram/telegram-bot-api:7.1
+    image: aiogram/telegram-bot-api:8.1
     deploy:
       restart_policy:
         max_attempts: 3
