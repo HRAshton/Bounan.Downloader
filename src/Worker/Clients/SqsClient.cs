@@ -80,8 +80,8 @@ public partial class SqsClient : ISqsClient, IDisposable
                     var hangPreventer = hangPreventerCts.Token;
 
                     var response = await AmazonAmazonSqs.ReceiveMessageAsync(_receiveMessageRequest, hangPreventer);
-                    Log.ReceivedMessages(Logger, response.Messages.Count);
-                    if (response.Messages.Count <= 0) continue;
+                    Log.ReceivedMessages(Logger, response.Messages?.Count ?? 0);
+                    if (response.Messages is not { Count: > 0 }) continue;
 
                     _ = AmazonAmazonSqs.DeleteMessageAsync(
                         new DeleteMessageRequest
