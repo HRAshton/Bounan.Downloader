@@ -7,6 +7,7 @@ using Microsoft.Extensions.Options;
 
 namespace Bounan.Downloader.Worker.Clients;
 
+// ReSharper disable once ClassWithVirtualMembersNeverInherited.Global - This class is partially inherited
 public partial class SqsClient : ISqsClient, IDisposable
 {
     private bool _isDisposed;
@@ -62,6 +63,8 @@ public partial class SqsClient : ISqsClient, IDisposable
     [SuppressMessage("Design", "CA1031:Do not catch general exception types")]
     public async Task WaitForMessageAsync(CancellationToken cancellationToken)
     {
+        ArgumentNullException.ThrowIfNull(_receiveMessageRequest.WaitTimeSeconds);
+        ArgumentNullException.ThrowIfNull(cancellationToken);
         Log.WaitingForMessage(Logger);
 
         await _semaphore.WaitAsync(cancellationToken);
@@ -71,7 +74,12 @@ public partial class SqsClient : ISqsClient, IDisposable
             {
                 try
                 {
-                    var response = await AmazonAmazonSqs.ReceiveMessageAsync(_receiveMessageRequest, cancellationToken);
+                    // Prevent the message receiving operation from hanging indefinitely
+                    using var hangPreventerCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+                    hangPreventerCts.CancelAfter((_receiveMessageRequest.WaitTimeSeconds.Value + 2) * 1000);
+                    var hangPreventer = hangPreventerCts.Token;
+
+                    var response = await AmazonAmazonSqs.ReceiveMessageAsync(_receiveMessageRequest, hangPreventer);
                     Log.ReceivedMessages(Logger, response.Messages.Count);
                     if (response.Messages.Count <= 0) continue;
 
@@ -85,6 +93,10 @@ public partial class SqsClient : ISqsClient, IDisposable
 
                     Log.RunningVideoProcessing(Logger);
                     return;
+                }
+                catch (OperationCanceledException) when (!cancellationToken.IsCancellationRequested)
+                {
+                    Log.HangDetected(Logger);
                 }
                 catch (Exception ex)
                 {

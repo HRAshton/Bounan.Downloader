@@ -15,5 +15,8 @@ public partial class SqsClient
 
         [LoggerMessage(LogLevel.Error, "Failed to receive message: {ErrorMessage}")]
         public static partial void FailedToReceiveMessage(ILogger logger, string errorMessage);
+
+        [LoggerMessage(LogLevel.Warning, "Hang detected: pooling interval is too long")]
+        public static partial void HangDetected(ILogger logger);
     }
 }
