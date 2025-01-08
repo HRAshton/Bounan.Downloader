@@ -23,6 +23,8 @@
       - Thumbnail__BotId=${Thumbnail__BotId}
     links:
       - telegram-bot-api-server
+    tmpfs:
+      - /tmp/bounan-downloader
   
   telegram-bot-api-server:
     image: aiogram/telegram-bot-api:8.1
