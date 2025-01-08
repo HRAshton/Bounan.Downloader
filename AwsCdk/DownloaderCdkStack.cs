@@ -119,7 +119,7 @@ public class DownloaderCdkStack : Stack
 
         var metricFilter = logGroup.AddMetricFilter("ErrorMetricFilter", new MetricFilterOptions
         {
-            FilterPattern = FilterPattern.AnyTerm("ERROR", "Error", "error", "fail"),
+            FilterPattern = FilterPattern.AnyTerm("[Error]"),
             MetricNamespace = StackName,
             MetricName = "ErrorCount",
             MetricValue = "1"
