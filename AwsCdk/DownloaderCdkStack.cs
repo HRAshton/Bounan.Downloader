@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using Amazon.CDK;
 using Amazon.CDK.AWS.CloudWatch;
@@ -39,6 +40,7 @@ public class DownloaderCdkStack : Stack
 
         var logGroup = CreateLogGroup();
         SetErrorAlarm(config, logGroup);
+        SetNoLogsAlarm(config, logGroup);
         logGroup.GrantWrite(user);
 
         var accessKey = new CfnAccessKey(this, "AccessKey", new CfnAccessKeyProps { UserName = user.UserName });
@@ -133,6 +135,35 @@ public class DownloaderCdkStack : Stack
             TreatMissingData = TreatMissingData.NOT_BREACHING,
         });
         alarm.AddAlarmAction(new AlarmActions.SnsAction(topic));
+    }
+
+    private void SetNoLogsAlarm(DownloaderCdkStackConfig config, ILogGroup logGroup)
+    {
+        var noLogsMetric = new Metric(new MetricProps
+        {
+            Namespace = "AWS/Logs",
+            MetricName = "IncomingLogEvents",
+            DimensionsMap = new Dictionary<string, string>
+            {
+                { "LogGroupName", logGroup.LogGroupName }
+            },
+            Statistic = "Sum",
+            Period = Duration.Minutes(2),
+        });
+
+        var noLogAlarm = new Alarm(this, "NoLogsAlarm", new AlarmProps
+        {
+            Metric = noLogsMetric,
+            Threshold = 0,
+            ComparisonOperator = ComparisonOperator.LESS_THAN_OR_EQUAL_TO_THRESHOLD,
+            EvaluationPeriods = 1,
+            TreatMissingData = TreatMissingData.BREACHING,
+            AlarmDescription = "Alarm if no logs received within 2 minutes"
+        });
+
+        var topic = new Topic(this, "NoLogAlarmSnsTopic", new TopicProps());
+        topic.AddSubscription(new EmailSubscription(config.AlertEmail));
+        noLogAlarm.AddAlarmAction(new AlarmActions.SnsAction(topic));
     }
 
     private void Out(string key, string value)
