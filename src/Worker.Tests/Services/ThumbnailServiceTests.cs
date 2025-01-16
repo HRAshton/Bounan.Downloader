@@ -146,7 +146,7 @@ public class ThumbnailServiceTests
             NullLogger<ThumbnailService>.Instance,
             Options.Create(new ThumbnailConfig
             {
-                BotId = "@uni_ru_anime_bot",
+                BotId = "@aaaaaa_aaaaa_bot",
             }),
             httpClientFactory.Object,
             loanApiComClientMock.Object);
