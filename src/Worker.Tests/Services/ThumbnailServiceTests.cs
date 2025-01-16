@@ -86,7 +86,6 @@ public class ThumbnailServiceTests
             NullLogger<ThumbnailService>.Instance,
             Options.Create(new ThumbnailConfig
             {
-                ApplyWatermark = false,
                 BotId = "@",
             }),
             httpClientFactory.Object,
@@ -147,7 +146,6 @@ public class ThumbnailServiceTests
             NullLogger<ThumbnailService>.Instance,
             Options.Create(new ThumbnailConfig
             {
-                ApplyWatermark = true,
                 BotId = "@uni_ru_anime_bot",
             }),
             httpClientFactory.Object,
