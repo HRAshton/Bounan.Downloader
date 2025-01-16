@@ -24,7 +24,7 @@
     links:
       - telegram-bot-api-server
     tmpfs:
-      - /tmp/bounan-downloader
+      - /tmp/bounan-downloader:mode=770,uid=1654,gid=1654
   
   telegram-bot-api-server:
     image: aiogram/telegram-bot-api:8.1
