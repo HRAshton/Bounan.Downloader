@@ -49,16 +49,9 @@ internal partial class ThumbnailService : IThumbnailService
 
         using var image = await GetOriginalImageAsync(originalThumbnailUrl, cancellationToken);
         Log.GotOriginalImage(Logger, image.Width, image.Height);
-
-        if (!_thumbnailConfig.ApplyWatermark)
-        {
-            var imageStream = new MemoryStream();
-            await image.SaveAsPngAsync(imageStream, cancellationToken);
-            imageStream.Position = 0;
-            Log.OriginalImageUsedAsThumbnail(Logger);
-
-            return imageStream;
-        }
+        
+        // Thumbnail size is limited by Telegram
+        image.Mutate(ctx => ctx.Resize(320, 180));
 
         var animeName = await GetAnimeNameAsync(videoKey.MyAnimeListId, cancellationToken);
         Log.GotAnimeName(Logger, videoKey, animeName);
@@ -73,7 +66,7 @@ internal partial class ThumbnailService : IThumbnailService
         var thumbnailStream = new MemoryStream();
         await image.SaveAsJpegAsync(thumbnailStream, cancellationToken);
         thumbnailStream.Position = 0;
-        Log.SavedThumbnail(Logger);
+        Log.SavedThumbnail(Logger, thumbnailStream.Length);
 
         return thumbnailStream;
     }

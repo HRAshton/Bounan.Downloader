@@ -18,8 +18,8 @@ internal partial class ThumbnailService
         [LoggerMessage(LogLevel.Information, "Drawn watermark")]
         public static partial void DrawnWatermark(ILogger<ThumbnailService> logger);
 
-        [LoggerMessage(LogLevel.Information, "Saved thumbnail")]
-        public static partial void SavedThumbnail(ILogger<ThumbnailService> logger);
+        [LoggerMessage(LogLevel.Information, "Saved thumbnail with size {Length}")]
+        public static partial void SavedThumbnail(ILogger<ThumbnailService> logger, long length);
 
         [LoggerMessage(LogLevel.Warning, "Different anime names: {AnimeNames}")]
         public static partial void DifferentAnimeNames(ILogger<ThumbnailService> logger, string[] animeNames);
