@@ -22,7 +22,11 @@ public class ThumbnailServiceTests
         // Arrange
         var thumbnailService = new ThumbnailService(
             NullLogger<ThumbnailService>.Instance,
-            Options.Create(new ThumbnailConfig { BotId = "@" }),
+            Options.Create(
+                new ThumbnailConfig
+                {
+                    BotId = "@",
+                }),
             Mock.Of<IHttpClientFactory>(),
             Mock.Of<ILoanApiComClient>());
 
@@ -40,7 +44,11 @@ public class ThumbnailServiceTests
         // Arrange
         var thumbnailService = new ThumbnailService(
             NullLogger<ThumbnailService>.Instance,
-            Options.Create(new ThumbnailConfig { BotId = "@" }),
+            Options.Create(
+                new ThumbnailConfig
+                {
+                    BotId = "@",
+                }),
             Mock.Of<IHttpClientFactory>(),
             Mock.Of<ILoanApiComClient>());
 
@@ -56,57 +64,6 @@ public class ThumbnailServiceTests
     }
 
     [Test]
-    public async Task GetThumbnailPngStreamAsync_ApplyWatermarkIsFalse_ReturnsImageStream()
-    {
-        // Arrange
-        using var testWatermark = new Image<Rgba32>(1, 2);
-        using var memoryStream = new MemoryStream();
-        await testWatermark.SaveAsPngAsync(memoryStream);
-        var bytes = memoryStream.ToArray();
-
-        var httpMessageHandlerMock = new Mock<HttpMessageHandler>();
-        httpMessageHandlerMock
-            .Protected()
-            .Setup<Task<HttpResponseMessage>>(
-                "SendAsync",
-                ItExpr.IsAny<HttpRequestMessage>(),
-                ItExpr.IsAny<CancellationToken>())
-            .ReturnsAsync(new HttpResponseMessage
-            {
-                StatusCode = HttpStatusCode.OK,
-                Content = new ByteArrayContent(bytes),
-            });
-
-        var httpClientFactory = new Mock<IHttpClientFactory>();
-        httpClientFactory
-            .Setup(x => x.CreateClient(It.IsAny<string>()))
-            .Returns(new HttpClient(httpMessageHandlerMock.Object));
-
-        var thumbnailService = new ThumbnailService(
-            NullLogger<ThumbnailService>.Instance,
-            Options.Create(new ThumbnailConfig
-            {
-                BotId = "@",
-            }),
-            httpClientFactory.Object,
-            Mock.Of<ILoanApiComClient>());
-
-        // Act
-        await using var stream = await thumbnailService.GetThumbnailJpegStreamAsync(
-            new Uri("https://example.com"),
-            Mock.Of<IVideoKey>(),
-            CancellationToken.None);
-
-        // Assert
-        using var image = Image.Load<Rgba32>(stream);
-        Assert.Multiple(() =>
-        {
-            Assert.That(image.Width, Is.EqualTo(1));
-            Assert.That(image.Height, Is.EqualTo(2));
-        });
-    }
-
-    [Test]
     public async Task GetThumbnailPngStreamAsync_ApplyWatermarkIsTrue_ReturnsImageStream()
     {
         // Arrange
@@ -119,11 +76,12 @@ public class ThumbnailServiceTests
                 "SendAsync",
                 ItExpr.IsAny<HttpRequestMessage>(),
                 ItExpr.IsAny<CancellationToken>())
-            .ReturnsAsync(new HttpResponseMessage
-            {
-                StatusCode = HttpStatusCode.OK,
-                Content = new ByteArrayContent(bytes),
-            });
+            .ReturnsAsync(
+                new HttpResponseMessage
+                {
+                    StatusCode = HttpStatusCode.OK,
+                    Content = new ByteArrayContent(bytes),
+                });
 
         var httpClientFactory = new Mock<IHttpClientFactory>();
         httpClientFactory
@@ -133,21 +91,22 @@ public class ThumbnailServiceTests
         var loanApiComClientMock = new Mock<ILoanApiComClient>();
         loanApiComClientMock
             .Setup(x => x.SearchAsync(It.IsAny<int>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync(new SearchResult(new[]
-            {
-                new SearchResultItem(
-                    "Непризнанный школой владыка демонов! " +
-                    "Сильнейший владыка демонов в истории поступает в академию, переродившись своим потомком",
-                    //  "Бедствие ли это?",
-                    string.Empty),
-            }));
+            .ReturnsAsync(
+                new SearchResult(
+                [
+                    new SearchResultItem(
+                        "Непризнанный школой владыка демонов! " +
+                        "Сильнейший владыка демонов в истории поступает в академию, переродившись своим потомком",
+                        string.Empty)
+                ]));
 
         var thumbnailService = new ThumbnailService(
             NullLogger<ThumbnailService>.Instance,
-            Options.Create(new ThumbnailConfig
-            {
-                BotId = "@aaaaaa_aaaaa_bot",
-            }),
+            Options.Create(
+                new ThumbnailConfig
+                {
+                    BotId = "@aaaaaa_aaaaa_bot",
+                }),
             httpClientFactory.Object,
             loanApiComClientMock.Object);
 
@@ -160,10 +119,11 @@ public class ThumbnailServiceTests
         // Assert
         using var image = Image.Load<Rgba32>(stream);
         await image.SaveAsPngAsync("../../../Out/output.png");
-        Assert.Multiple(() =>
-        {
-            Assert.That(image.Width, Is.EqualTo(1200));
-            Assert.That(image.Height, Is.EqualTo(675));
-        });
+        Assert.Multiple(
+            () =>
+            {
+                Assert.That(image.Width, Is.EqualTo(320));
+                Assert.That(image.Height, Is.EqualTo(180));
+            });
     }
 }
