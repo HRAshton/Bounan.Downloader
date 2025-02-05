@@ -1,22 +1,60 @@
-﻿using System;
+﻿using Amazon.CDK;
+using Amazon.CDK.AWS.SSM;
+using Microsoft.Extensions.Configuration;
 
 namespace Bounan.Downloader.AwsCdk;
 
 public class DownloaderCdkStackConfig
 {
-	public required string AlertEmail { get; init; }
+    public DownloaderCdkStackConfig(Stack stack, string cdkPrefix, string ssmPrefix)
+    {
+        var localConfig = new ConfigurationBuilder()
+            .AddJsonFile("appsettings.json")
+            .AddEnvironmentVariables()
+            .Build();
 
-	public required string GetVideoToDownloadLambdaFunctionName { get; init; }
+        AlertEmail = GetCdkValue(cdkPrefix, "alert-email", localConfig);
+        LoanApiToken = GetCdkValue(cdkPrefix, "loan-api-token", localConfig);
 
-	public required string UpdateVideoStatusLambdaFunctionName { get; init; }
+        GetVideoToDownloadLambdaName = GetCdkValue(cdkPrefix, "get-video-to-download", localConfig);
+        UpdateVideoStatusLambdaName = GetCdkValue(cdkPrefix, "update-video-status", localConfig);
+        VideoRegisteredTopicArn = GetCdkValue(cdkPrefix, "video-registered-sns-topic-arn", localConfig);
 
-    public required string VideoRegisteredTopicArn { get; init; }
+        UploadBotToken = GetSsmValue(stack, nameof(UploadBotToken), ssmPrefix);
+        UploadDestinationChatId = GetSsmValue(stack, nameof(UploadDestinationChatId), ssmPrefix);
+        TelegramAppId = GetSsmValue(stack, nameof(TelegramAppId), ssmPrefix);
+        TelegramAppHash = GetSsmValue(stack, nameof(TelegramAppHash), ssmPrefix);
+        ThumbnailBotUsername = GetSsmValue(stack, nameof(ThumbnailBotUsername), ssmPrefix);
+    }
 
-	public void Validate()
-	{
-		ArgumentException.ThrowIfNullOrWhiteSpace(AlertEmail);
-		ArgumentException.ThrowIfNullOrWhiteSpace(GetVideoToDownloadLambdaFunctionName);
-		ArgumentException.ThrowIfNullOrWhiteSpace(UpdateVideoStatusLambdaFunctionName);
-		ArgumentException.ThrowIfNullOrWhiteSpace(VideoRegisteredTopicArn);
-	}
+    public string AlertEmail { get; }
+
+    public string LoanApiToken { get; }
+
+    public string GetVideoToDownloadLambdaName { get; }
+
+    public string UpdateVideoStatusLambdaName { get; }
+
+    public string VideoRegisteredTopicArn { get; }
+
+    public string UploadBotToken { get; }
+
+    public string UploadDestinationChatId { get; }
+
+    public string TelegramAppId { get; }
+
+    public string TelegramAppHash { get; }
+
+    public string ThumbnailBotUsername { get; }
+
+    private static string GetCdkValue(string cdkPrefix, string key, IConfigurationRoot localConfig)
+    {
+        var localValue = localConfig.GetValue<string>(key);
+        return localValue is { Length: > 0 } ? localValue : Fn.ImportValue(cdkPrefix + key);
+    }
+
+    private static string GetSsmValue(Stack stack, string key, string ssmPrefix)
+    {
+        return StringParameter.ValueForStringParameter(stack, ssmPrefix + key);
+    }
 }
