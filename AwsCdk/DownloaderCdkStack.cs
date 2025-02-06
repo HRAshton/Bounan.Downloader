@@ -13,11 +13,14 @@ using Constructs;
 using Newtonsoft.Json;
 using AlarmActions = Amazon.CDK.AWS.CloudWatch.Actions;
 using LogGroupProps = Amazon.CDK.AWS.Logs.LogGroupProps;
+using Policy = Amazon.CDK.AWS.IAM.Policy;
 
 namespace Bounan.Downloader.AwsCdk;
 
 public sealed class DownloaderCdkStack : Stack
 {
+    private const string RuntimeConfigParameterPrefix = "/bounan/downloader/runtime-config";
+
     internal DownloaderCdkStack(Construct scope, string id, IStackProps? props = null) : base(scope, id, props)
     {
         var config = new DownloaderCdkStackConfig(this, "bounan:", "/bounan/downloader/deploy-config/");
@@ -36,8 +39,7 @@ public sealed class DownloaderCdkStack : Stack
 
         var accessKey = new CfnAccessKey(this, "AccessKey", new CfnAccessKeyProps { UserName = user.UserName });
 
-        var parameter = SaveParameter(logGroup, videoRegisteredQueue, config);
-        parameter.GrantRead(user);
+        SaveParameter(logGroup, videoRegisteredQueue, config, user);
 
         Out("Config", JsonConvert.SerializeObject(config));
         Out(
@@ -142,10 +144,11 @@ public sealed class DownloaderCdkStack : Stack
         noLogAlarm.AddAlarmAction(new AlarmActions.SnsAction(topic));
     }
 
-    private StringParameter SaveParameter(
+    private void SaveParameter(
         LogGroup logGroup,
         Queue videoRegisteredQueue,
-        DownloaderCdkStackConfig config)
+        DownloaderCdkStackConfig config,
+        User user)
     {
         var runtimeConfig = new
         {
@@ -188,11 +191,36 @@ public sealed class DownloaderCdkStack : Stack
 
         var json = JsonConvert.SerializeObject(runtimeConfig, Formatting.Indented);
 
-        return new StringParameter(this, "runtime_config", new StringParameterProps
+        _ = new StringParameter(this, "runtime-config", new StringParameterProps
         {
-            ParameterName = "/bounan/downloader/runtime_config",
+            ParameterName = RuntimeConfigParameterPrefix + "/json",
             StringValue = json,
         });
+
+        user.AttachInlinePolicy(new Policy(
+            this,
+            "ParameterPolicy",
+            new PolicyProps
+            {
+                Statements =
+                [
+                    new PolicyStatement(new PolicyStatementProps
+                    {
+                        Actions =
+                        [
+                            "ssm:GetParametersByPath",
+                            "ssm:DescribeParameters",
+                            "ssm:GetParameter",
+                            "ssm:GetParameterHistory",
+                            "ssm:GetParameters",
+                        ],
+                        Resources =
+                        [
+                            $"arn:aws:ssm:{Region}:{Account}:parameter{RuntimeConfigParameterPrefix}/*",
+                        ],
+                    }),
+                ],
+            }));
     }
 
     private void Out(string key, string value)

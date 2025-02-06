@@ -10,17 +10,6 @@
       - AWS_REGION=${AWS_REGION}
       - AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}
       - AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
-      - LoanApi__Token=${LoanApi__Token}
-      - Logging__LogGroup=${Logging__LogGroup}
-      - Hls2TlgrUploader__Telegram__ApiUrl=http://telegram-bot-api-server:8081
-      - Hls2TlgrUploader__Telegram__BotToken=${Hls2TlgrUploader__Telegram__BotToken}
-      - Hls2TlgrUploader__Telegram__DestinationChatId=${Hls2TlgrUploader__Telegram__DestinationChatId}
-      - AniMan__GetVideoToDownloadLambdaFunctionName=${AniMan__GetVideoToDownloadLambdaFunctionName}
-      - AniMan__UpdateVideoStatusLambdaFunctionName=${AniMan__UpdateVideoStatusLambdaFunctionName}
-      - Sqs__NotificationQueueUrl=${Sqs__NotificationQueueUrl}
-      - Processing__Threads=${Processing__Threads}
-      - Processing__TimeoutSeconds=${Processing__TimeoutSeconds}
-      - Thumbnail__BotId=${Thumbnail__BotId}
     links:
       - telegram-bot-api-server
     tmpfs:

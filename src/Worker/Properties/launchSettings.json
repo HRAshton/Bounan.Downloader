@@ -9,17 +9,7 @@
         "VideoService__UseLowestQuality": "true",
         "AWS_REGION": "",
         "AWS_ACCESS_KEY_ID": "",
-        "AWS_SECRET_ACCESS_KEY": "",
-        "LoanApi__Token": "",
-        "Logging__LogGroup": "",
-        "Hls2TlgrUploader__Telegram__ApiUrl": "",
-        "Hls2TlgrUploader__Telegram__BotToken": "",
-        "Hls2TlgrUploader__Telegram__DestinationChatId": "",
-        "AniMan__GetVideoToDownloadLambdaFunctionName": "",
-        "AniMan__UpdateVideoStatusLambdaFunctionName": "",
-        "Sqs__NotificationQueueUrl": "",
-        "Thumbnail__BotId": "",
-        "DUMMY": ""
+        "AWS_SECRET_ACCESS_KEY": ""
       }
     }
   }
