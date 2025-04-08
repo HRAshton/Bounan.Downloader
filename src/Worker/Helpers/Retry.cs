@@ -45,9 +45,9 @@ public static partial class Retry
             {
                 return await action(cancellationToken);
             }
-            catch (Exception) when (attempts < maxRetries)
+            catch (Exception ex) when (attempts < maxRetries)
             {
-                Log.RetryAttempt(logger, attempts, maxRetries, delayInMs);
+                Log.RetryAttempt(logger, attempts, maxRetries, delayInMs, ex.Message, ex.StackTrace);
                 attempts++;
                 await Task.Delay(delayInMs, cancellationToken);
             }
