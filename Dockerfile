@@ -1,16 +1,11 @@
-﻿FROM mcr.microsoft.com/dotnet/runtime:8.0 AS base
+﻿FROM mcr.microsoft.com/dotnet/aspnet:8.0 AS base
 
 VOLUME /tmp/bounan-downloader
-
-# Allow $APP_UID rw files in the volume
-RUN mkdir -p /tmp/bounan-downloader \
-    && chown -R $APP_UID /tmp/bounan-downloader
 
 RUN apt-get update \
     && apt-get install -y ffmpeg fonts-roboto \
     && rm -rf /var/lib/apt/lists/*
 
-USER $APP_UID
 WORKDIR /app
 
 FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build

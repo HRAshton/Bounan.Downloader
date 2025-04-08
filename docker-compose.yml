@@ -11,10 +11,10 @@
       - AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}
       - AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
       - HLS2TLGRUPLOADER__TELEGRAM__APIURL=http://telegram-bot-api-server:8081
-    links:
+    depends_on:
       - telegram-bot-api-server
     tmpfs:
-      - /tmp/bounan-downloader:mode=770,uid=1654,gid=1654
+      - /tmp/bounan-downloader:mode=777
   
   telegram-bot-api-server:
     image: aiogram/telegram-bot-api:8.3
