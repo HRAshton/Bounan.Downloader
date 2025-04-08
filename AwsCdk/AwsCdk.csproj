@@ -17,11 +17,11 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <PackageReference Include="Amazon.CDK.Lib" Version="2.173.1"/>
+        <PackageReference Include="Amazon.CDK.Lib" Version="2.188.0" />
         <PackageReference Include="Constructs" Version="10.4.2"/>
-        <PackageReference Include="Microsoft.Extensions.Configuration.EnvironmentVariables" Version="9.0.0"/>
-        <PackageReference Include="Microsoft.Extensions.Configuration.Json" Version="9.0.0"/>
-        <PackageReference Include="Amazon.Jsii.Analyzers" Version="1.105.0" PrivateAssets="all"/>
+        <PackageReference Include="Microsoft.Extensions.Configuration.EnvironmentVariables" Version="9.0.4" />
+        <PackageReference Include="Microsoft.Extensions.Configuration.Json" Version="9.0.4" />
+        <PackageReference Include="Amazon.Jsii.Analyzers" Version="1.111.0" PrivateAssets="all" />
     </ItemGroup>
 
     <ItemGroup>

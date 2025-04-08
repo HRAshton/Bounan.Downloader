@@ -3,7 +3,7 @@
 VOLUME /tmp/bounan-downloader
 
 # Allow $APP_UID rw files in the volume
-RUN mkdir /tmp/bounan-downloader \
+RUN mkdir -p /tmp/bounan-downloader \
     && chown -R $APP_UID /tmp/bounan-downloader
 
 RUN apt-get update \
