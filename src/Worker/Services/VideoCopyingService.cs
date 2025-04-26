@@ -52,7 +52,7 @@ internal partial class VideoCopyingService(
             await Retry.DoAsync(
                 async ct => await ProcessVideoInternalAsync(videoKey, ct),
                 Logger,
-                cancellationToken: cancellationToken);
+                cancellationToken: innerCts.Token);
         }
         catch (Exception e)
         {

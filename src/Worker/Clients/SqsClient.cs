@@ -91,7 +91,7 @@ public partial class SqsClient : ISqsClient, IDisposable
                             QueueUrl = _receiveMessageRequest.QueueUrl,
                             ReceiptHandle = response.Messages[0].ReceiptHandle,
                         },
-                        cancellationToken);
+                        hangPreventerCts.Token);
 
                     Log.RunningVideoProcessing(Logger);
                     return;
