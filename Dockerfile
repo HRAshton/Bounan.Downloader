@@ -23,7 +23,6 @@ RUN dotnet publish "Worker.csproj" --no-restore --self-contained true --configur
 
 FROM base AS final
 
-WORKDIR /app
 COPY --from=build /app/publish .
 
 ENTRYPOINT ["/app/Bounan.Downloader.Worker"]
