@@ -1,7 +1,8 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
     <PropertyGroup>
-        <TargetFramework>net8.0</TargetFramework>
+        <TargetFramework>net9.0</TargetFramework>
+        <LangVersion>13</LangVersion>
         <IsPublishable>false</IsPublishable>
         <IsPackable>false</IsPackable>
         <RollForward>Major</RollForward>
@@ -17,7 +18,7 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <PackageReference Include="Amazon.CDK.Lib" Version="2.188.0" />
+        <PackageReference Include="Amazon.CDK.Lib" Version="2.192.0" />
         <PackageReference Include="Constructs" Version="10.4.2"/>
         <PackageReference Include="Microsoft.Extensions.Configuration.EnvironmentVariables" Version="9.0.4" />
         <PackageReference Include="Microsoft.Extensions.Configuration.Json" Version="9.0.4" />
