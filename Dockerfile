@@ -3,7 +3,7 @@
 VOLUME /tmp/bounan-downloader
 
 RUN apt-get update \
-    && apt-get install -y ffmpeg fonts-roboto \
+    && apt-get install -y --no-install-recommends ffmpeg fonts-roboto \
     && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
