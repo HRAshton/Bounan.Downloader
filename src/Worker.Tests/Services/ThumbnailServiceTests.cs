@@ -1,6 +1,7 @@
 ﻿using System.Net;
 using Bounan.Common;
 using Bounan.Downloader.Worker.Configuration;
+using Bounan.Downloader.Worker.Helpers;
 using Bounan.Downloader.Worker.Services;
 using Bounan.LoanApi.Interfaces;
 using Bounan.LoanApi.RefitClients.LoanApiCom.Models;
@@ -22,11 +23,7 @@ public class ThumbnailServiceTests
         // Arrange
         var thumbnailService = new ThumbnailService(
             NullLogger<ThumbnailService>.Instance,
-            Options.Create(
-                new ThumbnailConfig
-                {
-                    BotId = "@",
-                }),
+            Options.Create(new ThumbnailConfig { BotId = "@" }),
             Mock.Of<IHttpClientFactory>(),
             Mock.Of<ILoanApiComClient>());
 
@@ -44,11 +41,7 @@ public class ThumbnailServiceTests
         // Arrange
         var thumbnailService = new ThumbnailService(
             NullLogger<ThumbnailService>.Instance,
-            Options.Create(
-                new ThumbnailConfig
-                {
-                    BotId = "@",
-                }),
+            Options.Create(new ThumbnailConfig { BotId = "@" }),
             Mock.Of<IHttpClientFactory>(),
             Mock.Of<ILoanApiComClient>());
 
@@ -67,7 +60,7 @@ public class ThumbnailServiceTests
     public async Task GetThumbnailPngStreamAsync_ApplyWatermarkIsTrue_ReturnsImageStream()
     {
         // Arrange
-        byte[] bytes = await File.ReadAllBytesAsync("Assets/thumbnail1.jpg");
+        byte[] baseImageBytes = await File.ReadAllBytesAsync("Assets/thumbnail1.jpg");
 
         var httpMessageHandlerMock = new Mock<HttpMessageHandler>();
         httpMessageHandlerMock
@@ -79,8 +72,7 @@ public class ThumbnailServiceTests
             .ReturnsAsync(
                 new HttpResponseMessage
                 {
-                    StatusCode = HttpStatusCode.OK,
-                    Content = new ByteArrayContent(bytes),
+                    StatusCode = HttpStatusCode.OK, Content = new ByteArrayContent(baseImageBytes),
                 });
 
         var httpClientFactory = new Mock<IHttpClientFactory>();
@@ -102,11 +94,7 @@ public class ThumbnailServiceTests
 
         var thumbnailService = new ThumbnailService(
             NullLogger<ThumbnailService>.Instance,
-            Options.Create(
-                new ThumbnailConfig
-                {
-                    BotId = "@aaaaaa_aaaaa_bot",
-                }),
+            Options.Create(new ThumbnailConfig { BotId = "@aaaaaa_aaaaa_bot", }),
             httpClientFactory.Object,
             loanApiComClientMock.Object);
 
@@ -124,5 +112,34 @@ public class ThumbnailServiceTests
             Assert.That(image.Width, Is.EqualTo(320));
             Assert.That(image.Height, Is.EqualTo(180));
         });
+
+        Image<Rgba32> load = Image.Load<Rgba32>("Assets/output1.png");
+        double mse = ComputeMse(image, load);
+        Assert.That(mse, Is.LessThan(1), "MSE is too high");
     }
+
+    private static double ComputeMse(Image<Rgba32> a, Image<Rgba32> b)
+    {
+        Guard.Ensure(a.Size == b.Size, "Images must be the same size");
+
+        // sum squared error over all channels
+        double totalError = 0;
+        for (int y = 0; y < a.Height; y++)
+        {
+            for (int x = 0; x < a.Width; x++)
+            {
+                var p = a[x, y];
+                var q = b[x, y];
+                totalError += Square(p.R - q.R);
+                totalError += Square(p.G - q.G);
+                totalError += Square(p.B - q.B);
+            }
+        }
+
+        // average per-channel
+        double msePerChannel = totalError / (a.Width * a.Height * 3);
+        return msePerChannel;
+    }
+
+    private static double Square(double v) => v * v;
 }

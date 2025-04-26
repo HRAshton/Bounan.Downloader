@@ -49,7 +49,7 @@ internal partial class ThumbnailService : IThumbnailService
 
         using var image = await GetOriginalImageAsync(originalThumbnailUrl, cancellationToken);
         Log.GotOriginalImage(Logger, image.Width, image.Height);
-        
+
         // Thumbnail size is limited by Telegram
         image.Mutate(ctx => ctx.Resize(320, 180));
 
