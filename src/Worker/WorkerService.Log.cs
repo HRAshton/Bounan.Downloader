@@ -18,5 +18,8 @@ public partial class WorkerService
 
         [LoggerMessage(LogLevel.Information, "Worker released")]
         public static partial void WorkerReleased(ILogger logger);
+
+        [LoggerMessage(LogLevel.Information, "Video processed in {Elapsed}")]
+        public static partial void VideoProcessed(ILogger logger, TimeSpan elapsed);
     }
 }

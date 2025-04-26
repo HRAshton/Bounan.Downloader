@@ -167,6 +167,10 @@ indent_size = 2
 [*.{csproj,vbproj,proj,nativeproj,locproj}]
 charset = utf-8
 
+# json files
+[*.json]
+indent_size = 2
+
 # Xml build files
 [*.builds]
 indent_size = 2

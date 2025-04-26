@@ -1,15 +1,24 @@
 ﻿{
   "$schema": "https://json.schemastore.org/launchsettings.json",
   "profiles": {
-    "BounanDownloader.Worker": {
+    "Run locally (dev)": {
       "commandName": "Project",
       "dotnetRunMessages": true,
       "environmentVariables": {
         "DOTNET_ENVIRONMENT": "Development",
-        "VideoService__UseLowestQuality": "true",
-        "AWS_REGION": "",
-        "AWS_ACCESS_KEY_ID": "",
-        "AWS_SECRET_ACCESS_KEY": ""
+        "AWS_PROFILE": "hra",
+        "HLS2TLGRUPLOADER__TELEGRAM__APIURL": "http://localhost:25565",
+        "Processing__Threads": "1"
+      }
+    },
+    "Run in Docker (prod)": {
+      "commandName": "Project",
+      "dotnetRunMessages": true,
+      "environmentVariables": {
+        "DOTNET_ENVIRONMENT": "Development",
+        "AWS_PROFILE": "hra_prod",
+        "HLS2TLGRUPLOADER__TELEGRAM__APIURL": "http://localhost:25565",
+        "Processing__Threads": "1"
       }
     }
   }

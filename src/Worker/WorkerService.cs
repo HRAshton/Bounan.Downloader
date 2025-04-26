@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using Bounan.Downloader.Worker.Configuration;
 using Bounan.Downloader.Worker.Extensions;
 using Bounan.Downloader.Worker.Interfaces;
@@ -48,6 +49,7 @@ public partial class WorkerService(
     private async Task RunWorkerInstance(SemaphoreSlim semaphore, int i, CancellationToken stoppingToken)
     {
         using var _ = Log.BeginScopeWorkerId(Logger, i);
+        var stopwatch = new Stopwatch();
 
         while (!stoppingToken.IsCancellationRequested)
         {
@@ -62,7 +64,11 @@ public partial class WorkerService(
 
             ArgumentNullException.ThrowIfNull(message.VideoKey);
             using var __ = Log.BeginScopeMsg(Logger, message.VideoKey.CalculateHash());
+
+            stopwatch.Start();
             await VideoCopyingService.ProcessVideo(message.VideoKey, stoppingToken);
+            Log.VideoProcessed(Logger, stopwatch.Elapsed);
+            stopwatch.Reset();
         }
     }
 }

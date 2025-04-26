@@ -20,3 +20,15 @@ NB: You need to deploy Bounan.Bot`s stack first to create the SQS queue.
 3. Fill .env file
 4. Run `docker compose build`
 5. Run `docker compose up -d`
+
+## Tips
+
+### Running telegram locally
+
+```shell
+docker run -it --rm -e "TELEGRAM_LOCAL" --env-file .env -p 25565:8081 aiogram/telegram-bot-api:latest
+```
+
+```shell
+podman run -it --rm -e "TELEGRAM_LOCAL" --env-file .env -p 25565:8081 aiogram/telegram-bot-api:latest
+```
