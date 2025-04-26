@@ -2,6 +2,7 @@
 using Amazon.SQS;
 using Amazon.SQS.Model;
 using Bounan.Downloader.Worker.Configuration;
+using Bounan.Downloader.Worker.Helpers;
 using Bounan.Downloader.Worker.Interfaces;
 using Microsoft.Extensions.Options;
 
@@ -32,7 +33,7 @@ public partial class SqsClient : ISqsClient, IDisposable
         {
             QueueUrl = sqsConfig.Value.NotificationQueueUrl.ToString(),
             MaxNumberOfMessages = 1,
-            WaitTimeSeconds = sqsConfig.Value.PollingIntervalSeconds
+            WaitTimeSeconds = sqsConfig.Value.PollingIntervalSeconds,
         };
 
         _semaphore = new SemaphoreSlim(processingConfig.Value.Threads, processingConfig.Value.Threads);
@@ -63,8 +64,9 @@ public partial class SqsClient : ISqsClient, IDisposable
     [SuppressMessage("Design", "CA1031:Do not catch general exception types")]
     public async Task WaitForMessageAsync(CancellationToken cancellationToken)
     {
-        ArgumentNullException.ThrowIfNull(_receiveMessageRequest.WaitTimeSeconds);
-        ArgumentNullException.ThrowIfNull(cancellationToken);
+        Guard.NotNull(_receiveMessageRequest.WaitTimeSeconds, nameof (_receiveMessageRequest.WaitTimeSeconds));
+        Guard.NotNullOrEmpty(_receiveMessageRequest.QueueUrl, nameof (_receiveMessageRequest.QueueUrl));
+
         Log.WaitingForMessage(Logger);
 
         await _semaphore.WaitAsync(cancellationToken);
@@ -87,7 +89,7 @@ public partial class SqsClient : ISqsClient, IDisposable
                         new DeleteMessageRequest
                         {
                             QueueUrl = _receiveMessageRequest.QueueUrl,
-                            ReceiptHandle = response.Messages[0].ReceiptHandle
+                            ReceiptHandle = response.Messages[0].ReceiptHandle,
                         },
                         cancellationToken);
 

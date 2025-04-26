@@ -36,7 +36,7 @@ public static partial class Retry
     {
         ArgumentNullException.ThrowIfNull(action);
 
-        var attempts = 0;
+        int attempts = 0;
         while (true)
         {
             cancellationToken.ThrowIfCancellationRequested();

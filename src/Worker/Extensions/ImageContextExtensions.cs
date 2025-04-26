@@ -53,7 +53,7 @@ internal static class ImageContextExtensions
         {
             Origin = center,
             HorizontalAlignment = HorizontalAlignment.Center,
-            VerticalAlignment = VerticalAlignment.Center
+            VerticalAlignment = VerticalAlignment.Center,
         };
         return processingContext.DrawText(textOptions, text, color);
     }

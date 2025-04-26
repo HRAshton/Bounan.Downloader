@@ -67,7 +67,7 @@ public class ThumbnailServiceTests
     public async Task GetThumbnailPngStreamAsync_ApplyWatermarkIsTrue_ReturnsImageStream()
     {
         // Arrange
-        var bytes = await File.ReadAllBytesAsync("Assets/thumbnail1.jpg");
+        byte[] bytes = await File.ReadAllBytesAsync("Assets/thumbnail1.jpg");
 
         var httpMessageHandlerMock = new Mock<HttpMessageHandler>();
         httpMessageHandlerMock
@@ -97,7 +97,7 @@ public class ThumbnailServiceTests
                     new SearchResultItem(
                         "Непризнанный школой владыка демонов! " +
                         "Сильнейший владыка демонов в истории поступает в академию, переродившись своим потомком",
-                        string.Empty)
+                        string.Empty),
                 ]));
 
         var thumbnailService = new ThumbnailService(
@@ -119,11 +119,10 @@ public class ThumbnailServiceTests
         // Assert
         using var image = Image.Load<Rgba32>(stream);
         await image.SaveAsPngAsync("../../../Out/output.png");
-        Assert.Multiple(
-            () =>
-            {
-                Assert.That(image.Width, Is.EqualTo(320));
-                Assert.That(image.Height, Is.EqualTo(180));
-            });
+        Assert.Multiple(() =>
+        {
+            Assert.That(image.Width, Is.EqualTo(320));
+            Assert.That(image.Height, Is.EqualTo(180));
+        });
     }
 }

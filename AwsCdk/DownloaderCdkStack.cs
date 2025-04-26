@@ -102,7 +102,7 @@ public sealed class DownloaderCdkStack : Stack
             FilterPattern = FilterPattern.AnyTerm("[Error]"),
             MetricNamespace = StackName,
             MetricName = "ErrorCount",
-            MetricValue = "1"
+            MetricValue = "1",
         });
 
         var alarm = new Alarm(this, "LogGroupErrorAlarm", new AlarmProps
@@ -123,7 +123,7 @@ public sealed class DownloaderCdkStack : Stack
             MetricName = "IncomingLogEvents",
             DimensionsMap = new Dictionary<string, string>
             {
-                { "LogGroupName", logGroup.LogGroupName }
+                { "LogGroupName", logGroup.LogGroupName },
             },
             Statistic = "Sum",
             Period = Duration.Minutes(2),
@@ -136,7 +136,7 @@ public sealed class DownloaderCdkStack : Stack
             ComparisonOperator = ComparisonOperator.LESS_THAN_OR_EQUAL_TO_THRESHOLD,
             EvaluationPeriods = 1,
             TreatMissingData = TreatMissingData.BREACHING,
-            AlarmDescription = "Alarm if no logs received within 2 minutes"
+            AlarmDescription = "Alarm if no logs received within 2 minutes",
         });
 
         var topic = new Topic(this, "NoLogAlarmSnsTopic", new TopicProps());
@@ -189,7 +189,7 @@ public sealed class DownloaderCdkStack : Stack
             },
         };
 
-        var json = JsonConvert.SerializeObject(runtimeConfig, Formatting.Indented);
+        string json = JsonConvert.SerializeObject(runtimeConfig, Formatting.Indented);
 
         _ = new StringParameter(this, "runtime-config", new StringParameterProps
         {

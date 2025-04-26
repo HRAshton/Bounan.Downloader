@@ -66,7 +66,7 @@ internal partial class VideoCopyingService(
         var signedUri = await LoanApiComClient.GetRequiredSignedLinkAsync(videoKey, cancellationToken);
         Log.ProcessingVideo(Logger, signedUri);
 
-        var (playlistUri, origThumbnail) = await GetPlaylistAndThumbnailAsync(signedUri, cancellationToken);
+        (Uri playlistUri, Uri origThumbnail) = await GetPlaylistAndThumbnailAsync(signedUri, cancellationToken);
         Log.GotVideoInfo(Logger, playlistUri, origThumbnail);
 
         var videoParts = await GetVideoPartsAsync(playlistUri, cancellationToken);
@@ -92,7 +92,7 @@ internal partial class VideoCopyingService(
         Uri signedUri,
         CancellationToken cancellationToken)
     {
-        var (playlists, thumb) =
+        (Dictionary<string, Uri> playlists, Uri thumb) =
             await LoanApiInfoClient.GetPlaylistsAndThumbnailUrlsAsync(signedUri, cancellationToken);
         Log.GotPlaylistsAndThumbnail(Logger, playlists, thumb);
 
@@ -112,7 +112,7 @@ internal partial class VideoCopyingService(
         using var httpClient = HttpClientFactory.CreateClient();
 
         var response = await httpClient.GetAsync(playlist, cancellationToken);
-        var content = await response.Content.ReadAsStringAsync(cancellationToken);
+        string content = await response.Content.ReadAsStringAsync(cancellationToken);
         var videoParts = content
             .Split('\n')
             .Where(line => line.StartsWith("./", StringComparison.Ordinal))

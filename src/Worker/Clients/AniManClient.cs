@@ -52,7 +52,7 @@ public partial class AniManClient(
             var request = new InvokeRequest
             {
                 FunctionName = AniManConfig.Value.GetVideoToDownloadLambdaFunctionName,
-                InvocationType = InvocationType.RequestResponse
+                InvocationType = InvocationType.RequestResponse,
             };
 
             var response = await LambdaClient.InvokeAsync(request, cancellationToken);
@@ -62,7 +62,7 @@ public partial class AniManClient(
                 return null;
             }
 
-            var payload = Encoding.UTF8.GetString(response.Payload.ToArray());
+            string payload = Encoding.UTF8.GetString(response.Payload.ToArray());
             return JsonConvert.DeserializeObject<DownloaderResponse>(payload);
         }
         catch (Exception ex)
@@ -85,7 +85,7 @@ public partial class AniManClient(
             {
                 FunctionName = AniManConfig.Value.UpdateVideoStatusLambdaFunctionName,
                 InvocationType = InvocationType.RequestResponse,
-                Payload = JsonConvert.SerializeObject(result)
+                Payload = JsonConvert.SerializeObject(result),
             };
 
             var response = await LambdaClient.InvokeAsync(request, cancellationToken);

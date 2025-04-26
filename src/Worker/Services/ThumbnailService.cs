@@ -53,7 +53,7 @@ internal partial class ThumbnailService : IThumbnailService
         // Thumbnail size is limited by Telegram
         image.Mutate(ctx => ctx.Resize(320, 180));
 
-        var animeName = await GetAnimeNameAsync(videoKey.MyAnimeListId, cancellationToken);
+        string animeName = await GetAnimeNameAsync(videoKey.MyAnimeListId, cancellationToken);
         Log.GotAnimeName(Logger, videoKey, animeName);
 
         using var thumbnail = CreateWatermark(animeName, videoKey.Dub, videoKey.Episode, _thumbnailConfig.BotId);
@@ -74,7 +74,7 @@ internal partial class ThumbnailService : IThumbnailService
     private async Task<string> GetAnimeNameAsync(int malId, CancellationToken cancellationToken)
     {
         var searchResult = await LoanApiComClient.SearchAsync(malId, cancellationToken);
-        var differentResults = searchResult.Results
+        string[] differentResults = searchResult.Results
             .Select(result => result.Title)
             .Distinct()
             .ToArray();
