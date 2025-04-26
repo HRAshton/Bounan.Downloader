@@ -1,40 +1,41 @@
 <Project Sdk="Microsoft.NET.Sdk.Worker">
 
-    <PropertyGroup>
-        <TargetFramework>net9.0</TargetFramework>
-        <LangVersion>13</LangVersion>
-        <ImplicitUsings>enable</ImplicitUsings>
-        <Nullable>enable</Nullable>
-        <DockerDefaultTargetOS>Linux</DockerDefaultTargetOS>
-        <RootNamespace>Bounan.Downloader.Worker</RootNamespace>
-        <AssemblyName>Bounan.Downloader.Worker</AssemblyName>
-        <EnforceCodeStyleInBuild>true</EnforceCodeStyleInBuild>
-        <EnableNETAnalyzers>true</EnableNETAnalyzers>
-        <AnalysisMode>AllEnabledByDefault</AnalysisMode>
-        <NoWarn>CA2007;CA1515;SYSLIB1013;</NoWarn>
-    </PropertyGroup>
+  <PropertyGroup>
+    <TargetFramework>net9.0</TargetFramework>
+    <RuntimeIdentifier>linux-musl-x64</RuntimeIdentifier>
+    <LangVersion>13</LangVersion>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <DockerDefaultTargetOS>Linux</DockerDefaultTargetOS>
+    <RootNamespace>Bounan.Downloader.Worker</RootNamespace>
+    <AssemblyName>Bounan.Downloader.Worker</AssemblyName>
+    <EnforceCodeStyleInBuild>true</EnforceCodeStyleInBuild>
+    <EnableNETAnalyzers>true</EnableNETAnalyzers>
+    <AnalysisMode>AllEnabledByDefault</AnalysisMode>
+    <NoWarn>CA2007;CA1515;SYSLIB1013;</NoWarn>
+  </PropertyGroup>
 
-    <ItemGroup>
-        <PackageReference Include="Amazon.Extensions.Configuration.SystemsManager" Version="7.0.0-preview.1"/>
-        <PackageReference Include="AWS.Logger.AspNetCore" Version="4.0.0-preview.1"/>
-        <PackageReference Include="AWSSDK.Extensions.NETCore.Setup" Version="4.0.0-preview.4"/>
-        <PackageReference Include="AWSSDK.Lambda" Version="4.0.0-preview.4"/>
-        <PackageReference Include="AWSSDK.SQS" Version="4.0.0-preview.4"/>
-        <PackageReference Include="Hls2TlgrUploader" Version="1.0.3"/>
-        <PackageReference Include="JetBrains.Annotations" Version="2024.3.0"/>
-        <PackageReference Include="Microsoft.Extensions.Hosting" Version="9.0.4"/>
-        <PackageReference Include="SixLabors.ImageSharp" Version="3.1.8" />
-        <PackageReference Include="SixLabors.ImageSharp.Drawing" Version="2.1.6" />
-    </ItemGroup>
+  <ItemGroup>
+    <PackageReference Include="Amazon.Extensions.Configuration.SystemsManager" Version="7.0.0-preview.1"/>
+    <PackageReference Include="AWS.Logger.AspNetCore" Version="4.0.0-preview.1"/>
+    <PackageReference Include="AWSSDK.Extensions.NETCore.Setup" Version="4.0.0-preview.4"/>
+    <PackageReference Include="AWSSDK.Lambda" Version="4.0.0-preview.4"/>
+    <PackageReference Include="AWSSDK.SQS" Version="4.0.0-preview.4"/>
+    <PackageReference Include="Hls2TlgrUploader" Version="1.0.3"/>
+    <PackageReference Include="JetBrains.Annotations" Version="2024.3.0"/>
+    <PackageReference Include="Microsoft.Extensions.Hosting" Version="9.0.4"/>
+    <PackageReference Include="SixLabors.ImageSharp" Version="3.1.8"/>
+    <PackageReference Include="SixLabors.ImageSharp.Drawing" Version="2.1.6"/>
+  </ItemGroup>
 
-    <ItemGroup>
-        <AssemblyAttribute Include="System.Runtime.CompilerServices.InternalsVisibleToAttribute">
-            <_Parameter1>Bounan.Downloader.Worker.Tests</_Parameter1>
-        </AssemblyAttribute>
-    </ItemGroup>
+  <ItemGroup>
+    <AssemblyAttribute Include="System.Runtime.CompilerServices.InternalsVisibleToAttribute">
+      <_Parameter1>Bounan.Downloader.Worker.Tests</_Parameter1>
+    </AssemblyAttribute>
+  </ItemGroup>
 
-    <ItemGroup>
-        <ProjectReference Include="..\Common\cs\Common.csproj"/>
-        <ProjectReference Include="..\LoanApi\LoanApi\LoanApi.csproj"/>
-    </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\Common\cs\Common.csproj"/>
+    <ProjectReference Include="..\LoanApi\LoanApi\LoanApi.csproj"/>
+  </ItemGroup>
 </Project>

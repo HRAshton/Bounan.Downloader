@@ -1,35 +1,29 @@
-﻿FROM mcr.microsoft.com/dotnet/aspnet:9.0 AS base
+﻿FROM mcr.microsoft.com/dotnet/runtime-deps:9.0-alpine AS base
 
 VOLUME /tmp/bounan-downloader
 
-RUN apt-get update \
-    && apt-get install -y --no-install-recommends ffmpeg fonts-roboto \
-    && rm -rf /var/lib/apt/lists/*
+RUN apk add ffmpeg font-roboto
 
 WORKDIR /app
 
 FROM mcr.microsoft.com/dotnet/sdk:9.0 AS build
-ARG BUILD_CONFIGURATION=Release
 WORKDIR /src
 
 COPY ["src/Common/StyleCop.props", "Common/"]
-COPY ["src/Common/cs/Common.csproj", "Common/"]
+COPY ["src/Common/cs/Common.csproj", "Common/cs/"]
 COPY ["src/LoanApi/StyleCop.props", "LoanApi/"]
 COPY ["src/LoanApi/LoanApi/LoanApi.csproj", "LoanApi/LoanApi/"]
 COPY ["src/Worker/Worker.csproj", "Worker/"]
-RUN dotnet restore "Worker/Worker.csproj"
+RUN dotnet restore "Worker/Worker.csproj" -r linux-musl-x64
 
 COPY src .
 WORKDIR /src/Worker
-RUN dotnet build "Worker.csproj" -c $BUILD_CONFIGURATION -o /app/build
 
-FROM build AS publish
-ARG BUILD_CONFIGURATION=Release
-RUN dotnet publish "Worker.csproj" -c $BUILD_CONFIGURATION -o /app/publish /p:UseAppHost=false
+RUN dotnet publish "Worker.csproj" --no-restore --self-contained true --configuration Release --runtime linux-musl-x64 --output /app/publish
 
 FROM base AS final
 
 WORKDIR /app
-COPY --from=publish /app/publish .
+COPY --from=build /app/publish .
 
-ENTRYPOINT ["dotnet", "Bounan.Downloader.Worker.dll"]
+ENTRYPOINT ["/app/Bounan.Downloader.Worker"]
