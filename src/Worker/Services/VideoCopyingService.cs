@@ -112,6 +112,7 @@ internal partial class VideoCopyingService(
         using var httpClient = HttpClientFactory.CreateClient();
 
         var response = await httpClient.GetAsync(playlist, cancellationToken);
+        response.EnsureSuccessStatusCode();
         string content = await response.Content.ReadAsStringAsync(cancellationToken);
         var videoParts = content
             .Split('\n')
