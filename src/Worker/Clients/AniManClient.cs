@@ -8,18 +8,23 @@ using Bounan.Downloader.Worker.Configuration;
 using Bounan.Downloader.Worker.Interfaces;
 using Microsoft.Extensions.Options;
 using Newtonsoft.Json;
+using Newtonsoft.Json.Serialization;
 
 namespace Bounan.Downloader.Worker.Clients;
 
 [SuppressMessage("Design", "CA1031:Do not catch general exception types")]
-public partial class AniManClient(
+public sealed partial class AniManClient(
     ILogger<AniManClient> logger,
     IOptions<AniManConfig> aniManConfig,
     IAmazonLambda lambdaClient)
     : IAniManClient, IDisposable
 {
-    private bool _disposedValue;
-    private readonly SemaphoreSlim _semaphore = new (1, 1);
+    private readonly SemaphoreSlim _semaphore = new(1, 1);
+
+    private readonly JsonSerializerSettings _jsonSerializerSettings = new()
+    {
+        ContractResolver = new CamelCasePropertyNamesContractResolver(),
+    };
 
     private ILogger<AniManClient> Logger { get; } = logger;
 
@@ -29,19 +34,7 @@ public partial class AniManClient(
 
     public void Dispose()
     {
-        Dispose(true);
-        GC.SuppressFinalize(this);
-    }
-
-    protected virtual void Dispose(bool disposing)
-    {
-        if (_disposedValue) return;
-        if (disposing)
-        {
-            _semaphore.Dispose();
-        }
-
-        _disposedValue = true;
+        _semaphore.Dispose();
     }
 
     public async Task<DownloaderResponse?> GetNextVideo(CancellationToken cancellationToken)
@@ -55,7 +48,7 @@ public partial class AniManClient(
                 InvocationType = InvocationType.RequestResponse,
             };
 
-            var response = await LambdaClient.InvokeAsync(request, cancellationToken);
+            InvokeResponse response = await LambdaClient.InvokeAsync(request, cancellationToken);
             if (response.HttpStatusCode != HttpStatusCode.OK)
             {
                 Log.FailedToGetVideoInfo(Logger, response.HttpStatusCode);
@@ -63,7 +56,7 @@ public partial class AniManClient(
             }
 
             string payload = Encoding.UTF8.GetString(response.Payload.ToArray());
-            return JsonConvert.DeserializeObject<DownloaderResponse>(payload);
+            return JsonConvert.DeserializeObject<DownloaderResponse>(payload, _jsonSerializerSettings);
         }
         catch (Exception ex)
         {
@@ -85,10 +78,10 @@ public partial class AniManClient(
             {
                 FunctionName = AniManConfig.Value.UpdateVideoStatusLambdaFunctionName,
                 InvocationType = InvocationType.RequestResponse,
-                Payload = JsonConvert.SerializeObject(result),
+                Payload = JsonConvert.SerializeObject(result, _jsonSerializerSettings),
             };
 
-            var response = await LambdaClient.InvokeAsync(request, cancellationToken);
+            InvokeResponse response = await LambdaClient.InvokeAsync(request, cancellationToken);
             if (response.HttpStatusCode != HttpStatusCode.OK)
             {
                 Log.FailedToSendResult(Logger, response.HttpStatusCode);
