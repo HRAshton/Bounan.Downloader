@@ -57,7 +57,10 @@ internal partial class VideoCopyingService(
         catch (Exception e)
         {
             Log.ErrorProcessingVideo(Logger, e);
-            await SendResult(videoKey, null, innerCts.Token);
+
+            using var cts = new CancellationTokenSource();
+            cts.CancelAfter(TimeSpan.FromSeconds(5));
+            await SendResult(videoKey, null, cts.Token);
         }
     }
 
