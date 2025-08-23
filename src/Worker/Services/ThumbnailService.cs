@@ -54,9 +54,10 @@ internal partial class ThumbnailService : IThumbnailService
         image.Mutate(ctx => ctx.Resize(320, 180));
 
         string animeName = await GetAnimeNameAsync(videoKey.MyAnimeListId, cancellationToken);
-        Log.GotAnimeName(Logger, videoKey, animeName);
+        string renamedDub = GetDubName(videoKey.Dub);
+        Log.GotAnimeName(Logger, videoKey, animeName, renamedDub);
 
-        using var thumbnail = CreateWatermark(animeName, videoKey.Dub, videoKey.Episode, _thumbnailConfig.BotId);
+        using var thumbnail = CreateWatermark(animeName, renamedDub, videoKey.Episode, _thumbnailConfig.BotId);
         Log.CreatedWatermark(Logger, thumbnail.Width, thumbnail.Height);
 
         thumbnail.Mutate(ctx => ctx.Resize(image.Width, image.Height));
@@ -84,6 +85,11 @@ internal partial class ThumbnailService : IThumbnailService
         }
 
         return searchResult.Results.First().Title;
+    }
+
+    private static string GetDubName(string originalDub)
+    {
+        return originalDub.Replace(".sub", " Sub", StringComparison.OrdinalIgnoreCase);
     }
 
     private async Task<Image> GetOriginalImageAsync(

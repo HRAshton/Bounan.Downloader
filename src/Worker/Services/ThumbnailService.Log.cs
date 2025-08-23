@@ -6,8 +6,12 @@ internal partial class ThumbnailService
 {
     private static partial class Log
     {
-        [LoggerMessage(LogLevel.Information, "Got anime name for {VideoKey}: {AnimeName}")]
-        public static partial void GotAnimeName(ILogger<ThumbnailService> logger, IVideoKey videoKey, string animeName);
+        [LoggerMessage(LogLevel.Information, "Got anime name for {VideoKey}: {AnimeName} ({Dub})")]
+        public static partial void GotAnimeName(
+            ILogger<ThumbnailService> logger,
+            IVideoKey videoKey,
+            string animeName,
+            string dub);
 
         [LoggerMessage(LogLevel.Information, "Got original image with size {Width}x{Height}")]
         public static partial void GotOriginalImage(ILogger<ThumbnailService> logger, int width, int height);

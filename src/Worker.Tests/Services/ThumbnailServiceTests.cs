@@ -56,11 +56,20 @@ public class ThumbnailServiceTests
         Assert.ThrowsAsync<ArgumentNullException>(Act, "Value cannot be null. (Parameter 'videoKey')");
     }
 
-    [Test]
-    public async Task GetThumbnailPngStreamAsync_ApplyWatermarkIsTrue_ReturnsImageStream()
+    [TestCase(
+        1,
+        "Непризнанный школой владыка демонов! Сильнейший владыка демонов в истории поступает в академию, переродившись своим потомком",
+        "Lover's Choice",
+        100000)]
+    [TestCase(2, "The Eminence in Shadow", "Crunopyshall.Subtitles", 12)]
+    public async Task GetThumbnailPngStreamAsync_ApplyWatermarkIsTrue_ReturnsImageStream(
+        int testId,
+        string animeName,
+        string dub,
+        int episode)
     {
         // Arrange
-        byte[] baseImageBytes = await File.ReadAllBytesAsync("Assets/thumbnail1.jpg");
+        byte[] baseImageBytes = await File.ReadAllBytesAsync("Assets/thumbnail.jpg");
 
         var httpMessageHandlerMock = new Mock<HttpMessageHandler>();
         httpMessageHandlerMock
@@ -86,34 +95,31 @@ public class ThumbnailServiceTests
             .ReturnsAsync(
                 new SearchResult(
                 [
-                    new SearchResultItem(
-                        "Непризнанный школой владыка демонов! " +
-                        "Сильнейший владыка демонов в истории поступает в академию, переродившись своим потомком",
-                        string.Empty),
+                    new SearchResultItem(animeName, string.Empty),
                 ]));
 
         var thumbnailService = new ThumbnailService(
             NullLogger<ThumbnailService>.Instance,
-            Options.Create(new ThumbnailConfig { BotId = "@aaaaaa_aaaaa_bot", }),
+            Options.Create(new ThumbnailConfig { BotId = "@aaaaaa_aaaaa_bot" }),
             httpClientFactory.Object,
             loanApiComClientMock.Object);
 
         // Act
         await using var stream = await thumbnailService.GetThumbnailJpegStreamAsync(
             new Uri("https://example.com"),
-            new VideoKey(0, "GetThumbnailPngStreamAsync", 100000),
+            new VideoKey(0, dub, episode),
             CancellationToken.None);
 
         // Assert
         using var image = Image.Load<Rgba32>(stream);
-        await image.SaveAsPngAsync("../../../Out/output.png");
+        await image.SaveAsPngAsync($"../../../Out/output{testId}.jpg");
         Assert.Multiple(() =>
         {
             Assert.That(image.Width, Is.EqualTo(320));
             Assert.That(image.Height, Is.EqualTo(180));
         });
 
-        Image<Rgba32> load = Image.Load<Rgba32>("Assets/output1.png");
+        Image<Rgba32> load = Image.Load<Rgba32>($"Assets/sample{testId}.jpg");
         double mse = ComputeMse(image, load);
         Assert.That(mse, Is.LessThan(1), "MSE is too high");
     }
