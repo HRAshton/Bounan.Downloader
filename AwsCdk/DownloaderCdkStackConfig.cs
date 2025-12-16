@@ -4,7 +4,7 @@ using Microsoft.Extensions.Configuration;
 
 namespace Bounan.Downloader.AwsCdk;
 
-public class DownloaderCdkStackConfig
+internal sealed class DownloaderCdkStackConfig
 {
     public DownloaderCdkStackConfig(Stack stack, string cdkPrefix, string ssmPrefix)
     {

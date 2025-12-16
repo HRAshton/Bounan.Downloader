@@ -17,7 +17,7 @@ using Policy = Amazon.CDK.AWS.IAM.Policy;
 
 namespace Bounan.Downloader.AwsCdk;
 
-public sealed class DownloaderCdkStack : Stack
+internal sealed class DownloaderCdkStack : Stack
 {
     private const string RuntimeConfigParameterPrefix = "/bounan/downloader/runtime-config";
 
